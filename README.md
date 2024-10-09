@@ -4,7 +4,7 @@
     <h1>Dito</h1>
     <p>Advanced Layer 7 Reverse Proxy Server</p>
     <img src="https://img.shields.io/badge/status-active-green.svg">
-    <img src="https://img.shields.io/badge/release-1.0.0-green.svg">
+    <img src="https://img.shields.io/badge/release-0.1.0-green.svg">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg">
     <img src="https://img.shields.io/badge/language-Go-blue.svg">
     <img src="dito.png" alt="Dito Logo" >
