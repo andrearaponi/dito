@@ -1,0 +1,59 @@
+# Configuration for the proxy server.
+port: '8081' # The port on which the server will listen.
+hot_reload: true # Enable hot reloading of the configuration file.
+
+# Logging configuration.
+logging:
+  enabled: true # Enable or disable logging.
+  verbose: false # Enable or disable verbose logging.
+  level: "info" # Set the log level (e.g., debug, info, warn, error)
+
+# Redis configuration.
+redis:
+  enabled: true # Enable or disable Redis caching.
+  host: "localhost"
+  port: "6379"
+  password: ""  # Leave empty if no password is required.
+
+# List of location configurations for proxying requests.
+locations:
+  - path: "^/dito$" # Regex pattern to match the request path.
+    target_url: https://httpbin.org/get # The target URL to which the request will be proxied.
+    replace_path: true # Replace the matched path with the target URL.
+    additional_headers:
+      # Additional headers to be added to the request.
+      il-molise: non esiste
+    excluded_headers:
+      - Cookie # Headers to be excluded from the request.
+    middlewares:
+      - rate-limiter-redis
+      - auth
+      - cache
+    rate_limiting:
+      enabled: true
+      requests_per_second: 2
+      burst: 4
+    cache:
+      enabled: true
+      ttl: 30
+    cert_file: "" # Optional client certificate file for HTTPS connections.
+    key_file: "" # Optional client key file for HTTPS connections.
+    ca_file: "" # Optional CA certificate file for verifying server certificates.
+
+  - path: "^/todos/(?:[1-9]|10)$" # Regex pattern to match the request path.
+    target_url: https://jsonplaceholder.typicode.com/ # The target URL to which the request will be proxied.
+    additional_headers:
+      Host: jsonplaceholder.typicode.com # Additional headers to be added to the request.
+    middlewares:
+      - auth
+      #- rate-limiter-redis
+    rate_limiting:
+      enabled: true
+      requests_per_second: 2
+      burst: 4
+    excluded_headers:
+      - Cookie # Headers to be excluded from the request.
+    cert_file: "" # Optional client certificate file.
+    key_file: "" # Optional client key file.
+    ca_file: "" # Optional CA certificate file.
+
