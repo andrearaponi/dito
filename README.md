@@ -123,6 +123,22 @@ Dito supports custom middlewares, which can be specified in the configuration. C
 - `rate-limiter-redis`: Limits the number of requests per IP using Redis for distributed management.
 - `cache`: Caches responses using Redis, improving performance for idempotent responses (e.g., GET).
 
+### Middleware Execution Order
+
+The order in which middlewares are applied is critical for ensuring proper functionality. For example:
+
+- If the `rate-limiter` middleware is applied before `auth`, requests might be throttled before authentication is checked. This could lead to unauthorized requests consuming rate limit tokens.
+- Similarly, applying `cache` before `auth` could result in cached responses being served to unauthenticated users, which is not ideal for secure endpoints.
+
+#### Example Middleware Order:
+
+1. `rate-limiter-redis`: Throttles requests to protect the backend.
+2. `auth`: Ensures that only authenticated users can access the API.
+3. `cache`: Caches responses to reduce load on backends for repeated requests.
+
+To implement a new middleware, place your logic in the `middlewares/` directory and reference it in the configuration.
+
+
 ## Redis Integration
 
 ### Rate Limiting
@@ -144,6 +160,21 @@ Dito supports mTLS (mutual TLS) for secure connections to backends. You can spec
 - `cert_file`: The client certificate.
 - `key_file`: The client private key.
 - `ca_file`: The certificate authority (CA) for verifying the backend.
+
+## Reporting Issues
+
+If you encounter any issues while using Dito, please follow these steps to open an issue on the GitHub repository:
+
+1. **Go Version**: Specify the version of Go you are using.
+   - You can find your Go version by running `go version` in your terminal.
+
+2. **Error Details**: Provide a detailed description of the error or issue you encountered. Include:
+   - The exact error message.
+   - The steps you took to produce the error.
+   - Any relevant logs or console outputs.
+
+3. **Configuration File**: Include the `config.yaml` file you are using.
+   - This will help us understand the context in which the issue occurred and allow us to replicate the problem.
 
 ## License
 
