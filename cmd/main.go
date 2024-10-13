@@ -1,17 +1,22 @@
 package main
 
 import (
+	"context"
 	"dito/app"
 	credis "dito/client/redis"
 	"dito/config"
 	"dito/handlers"
 	"dito/logging"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 // main is the entry point of the application.
@@ -60,25 +65,62 @@ func main() {
 	StartServer(dito)
 }
 
-// StartServer initializes the HTTP server and sets up the route handler.
-// It logs the server start message and handles any errors that occur during server startup.
+// StartServer initializes and starts the HTTP server for the Dito application.
+// It sets up the necessary routes, handles graceful shutdown on receiving OS interrupt signals,
+// and logs the server status.
 //
 // Parameters:
-// - dito: A pointer to the Dito instance containing the application configuration and logger.
+//
+//	dito (*app.Dito): The Dito application instance containing configuration and logger.
 func StartServer(dito *app.Dito) {
-	// Create a new ServeMux
+	// Create a new HTTP request multiplexer (mux) to handle incoming requests.
 	mux := http.NewServeMux()
-	// Set up the route handler
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handlers.DynamicProxyHandler(dito, w, r)
 	})
 
-	// Log the server start message
+	// Create a custom HTTP server with the specified address and handler.
+	server := &http.Server{
+		Addr:    ":" + dito.Config.Port,
+		Handler: mux,
+	}
+
+	// Channel to listen for OS interrupt signals (e.g., Ctrl+C).
+	idleConnsClosed := make(chan struct{})
+
+	go func() {
+		// Listen for interrupt signals.
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+		<-sigChan
+
+		// Signal received, initiate graceful shutdown.
+		dito.Logger.Info("Shutting down server gracefully...")
+
+		// Context with timeout for graceful shutdown (e.g., 30 seconds).
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// Attempt to gracefully shut down the server.
+		if err := server.Shutdown(ctx); err != nil {
+			dito.Logger.Error("Server forced to shutdown: ", err)
+		} else {
+			dito.Logger.Info("Server shut down gracefully.")
+		}
+
+		close(idleConnsClosed)
+	}()
+
+	// Log server start message.
 	dito.Logger.Info(fmt.Sprintf("👉 Dito it's ready on port: %s", dito.Config.Port))
-	// Start the HTTP server
-	err := http.ListenAndServe(":"+dito.Config.Port, mux)
-	if err != nil {
+
+	// Start the HTTP server.
+	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		dito.Logger.Error("Server failed to start: ", err)
 		log.Fatal(err)
 	}
+
+	// Wait for all idle connections to close.
+	<-idleConnsClosed
+	dito.Logger.Info("All connections closed, exiting.")
 }
