@@ -8,6 +8,11 @@ logging:
   verbose: false # Enable or disable verbose logging.
   level: "info" # Set the log level (e.g., debug, info, warn, error)
 
+# Metrics configuration.
+metrics:
+  enabled: true # Enable or disable metrics.
+  path: "/metrics" # The path on which the metrics will be exposed.
+
 # Redis configuration.
 redis:
   enabled: true # Enable or disable Redis caching.
@@ -26,8 +31,8 @@ locations:
     excluded_headers:
       - Cookie # Headers to be excluded from the request.
     middlewares:
-      - rate-limiter-redis
-      - auth
+      #- rate-limiter-redis
+      #- auth
       - cache
     rate_limiting:
       enabled: true

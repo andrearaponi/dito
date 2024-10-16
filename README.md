@@ -35,6 +35,7 @@
 - `transport/`: HTTP transport customization (including TLS management).
 - `writer/`: Custom HTTP response writers for capturing status codes.
 - `logging/`: Utilities for logging requests and responses.
+- `metrics/`: Prometheus metrics collection and handling.
 
 ## Installation
 
@@ -76,42 +77,51 @@ Example:
 The configuration is defined in a `yaml` file, which can be dynamically reloaded if the `hot_reload` option is enabled. Here’s an example of a basic configuration:
 
 ```yaml
-port: '8081'  # The port on which the server listens
-hot_reload: true  # Enable hot-reload of configuration
+# Configuration for the proxy server.
+port: '8081' # The port on which the server will listen.
+hot_reload: true # Enable hot reloading of the configuration file.
 
+# Logging configuration.
 logging:
-  enabled: true  # Enable or disable logging
-  verbose: false  # Enable verbose logging
+   enabled: true # Enable or disable logging.
+   verbose: false # Enable or disable verbose logging.
+   level: "info" # Set the log level (e.g., debug, info, warn, error)
 
+# Metrics configuration.
+metrics:
+   enabled: true # Enable or disable metrics.
+   path: "/metrics" # The path on which the metrics will be exposed.
+
+# Redis configuration.
 redis:
-  enabled: true  # Enable Redis for caching and rate limiting
-  address: "localhost:6379"
-  password: "yourpassword"
-  db: 0
+   enabled: true # Enable or disable Redis caching.
+   host: "localhost"
+   port: "6379"
+   password: ""  # Leave empty if no password is required.
 
+# List of location configurations for proxying requests.
 locations:
-  - path: "^/api$"
-    target_url: https://example.com
-    replace_path: true
-    additional_headers:
-      X-Custom-Header: "my-value"
-      il-molise: "non-esiste"
-    excluded_headers:
-      - Cookie
-    middlewares:
-      - auth
-      - rate-limiter-redis
-      - cache
-    cache_config:
-      enabled: true
-      ttl: 60  # Cache time-to-live in seconds
-    rate_limiting:
-      enabled: true
-      requests_per_second: 5
-      burst: 10
-    cert_file: "certs/client-cert.pem"
-    key_file: "certs/client-key.pem"
-    ca_file: "certs/ca-cert.pem"
+   - path: "^/dito$" # Regex pattern to match the request path.
+     target_url: https://httpbin.org/get # The target URL to which the request will be proxied.
+     replace_path: true # Replace the matched path with the target URL.
+     additional_headers:
+        # Additional headers to be added to the request.
+        il-molise: non esiste
+     excluded_headers:
+        - Cookie # Headers to be excluded from the request.
+     middlewares:
+        - rate-limiter-redis # List of middlewares to be applied.
+        - cache
+     rate_limiting:
+        enabled: true
+        requests_per_second: 2
+        burst: 4
+     cache:
+        enabled: true
+        ttl: 30
+     cert_file: "" # Optional client certificate file for HTTPS connections.
+     key_file: "" # Optional client key file for HTTPS connections.
+     ca_file: "" # Optional CA certificate file for verifying server certificates.
 ```
 
 ## Middlewares
@@ -161,6 +171,38 @@ Dito supports mTLS (mutual TLS) for secure connections to backends. You can spec
 - `key_file`: The client private key.
 - `ca_file`: The certificate authority (CA) for verifying the backend.
 
+## Metrics
+
+Dito supports monitoring through Prometheus by exposing various metrics related to the proxy's performance and behavior. The metrics are accessible at the configured path (default is `/metrics`).
+
+### Available Metrics
+
+Dito provides both custom metrics and standard metrics from the Go runtime and Prometheus libraries:
+
+#### Custom Metrics
+- **`http_requests_total`**: Total number of HTTP requests processed, partitioned by method, path, and status code.
+- **`http_request_duration_seconds`**: Duration of HTTP requests in seconds, with predefined buckets.
+- **`active_connections`**: Number of active connections currently being handled by the proxy.
+- **`data_transferred_bytes_total`**: Total amount of data transferred in bytes, partitioned by direction (`inbound` or `outbound`).
+
+#### Standard Metrics
+- **Go runtime metrics**: Metrics such as memory usage, garbage collection statistics, and the number of goroutines, which are automatically exposed by the Go Prometheus client library. Examples include:
+   - `go_goroutines`: Number of goroutines currently running.
+   - `go_memstats_alloc_bytes`: Number of bytes allocated in the heap.
+   - `go_gc_duration_seconds`: Duration of garbage collection cycles.
+- **Prometheus HTTP handler metrics**: Metrics related to the Prometheus HTTP handler itself, such as:
+   - `promhttp_metric_handler_requests_total`: Total number of HTTP requests handled by the metrics endpoint.
+   - `promhttp_metric_handler_requests_in_flight`: Current number of scrapes being served.
+
+### Configuration Example
+
+To enable metrics, make sure the following section is present in the `config.yaml` file:
+
+```yaml
+metrics:
+   enabled: true # Enable or disable metrics.
+   path: "/metrics" # The path on which the metrics will be exposed.
+```
 ## Reporting Issues
 
 If you encounter any issues while using Dito, please follow these steps to open an issue on the GitHub repository:
