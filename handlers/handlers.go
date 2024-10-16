@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"dito/app"
 	"dito/config"
-	"dito/logging"
+	"dito/metrics"
 	cmid "dito/middlewares"
 	ct "dito/transport"
 	"dito/writer"
@@ -13,8 +13,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
-	"time"
 )
 
 const (
@@ -43,7 +43,12 @@ func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request)
 		dito.Logger.Debug(fmt.Sprintf("Request body: %s", string(bodyBytes)))
 	}
 
-	start := time.Now()
+	if isMetricsEndpoint(r.URL.Path, dito.Config.Metrics.Path) && dito.Config.Metrics.Enabled {
+		dito.Logger.Debug("Handling metrics endpoint")
+		handler := metrics.ExposeMetricsHandler()
+		handler.ServeHTTP(w, r)
+		return
+	}
 
 	for i, location := range dito.Config.Locations {
 		if location.CompiledRegex.MatchString(r.URL.Path) {
@@ -52,7 +57,6 @@ func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request)
 			})
 
 			handlerWithMiddlewares := applyMiddlewares(dito, handler, location)
-			handlerWithMiddlewares = cmid.LoggingMiddleware(handlerWithMiddlewares, dito)
 
 			lrw := &writer.ResponseWriter{ResponseWriter: w}
 			handlerWithMiddlewares.ServeHTTP(lrw, r)
@@ -61,14 +65,8 @@ func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	duration := time.Since(start)
-
 	http.NotFound(w, r)
 
-	if dito.Config.Logging.Enabled {
-		headers := r.Header
-		logging.LogRequestCompact(r, &bodyBytes, (*map[string][]string)(&headers), 404, duration)
-	}
 }
 
 // ServeProxy handles the proxying of requests to the target URL specified in the location configuration.
@@ -110,6 +108,15 @@ func ServeProxy(dito *app.Dito, locationIndex int, lrw http.ResponseWriter, r *h
 			req.Host = targetURL.Host
 		},
 		Transport: customTransport,
+		ErrorHandler: func(w http.ResponseWriter, req *http.Request, err error) {
+			dito.Logger.Error(fmt.Sprintf("Error proxying request: %v", err))
+
+			if os.IsTimeout(err) {
+				http.Error(w, "Gateway Timeout", http.StatusGatewayTimeout)
+			} else {
+				http.Error(w, "Bad Gateway", http.StatusBadGateway)
+			}
+		},
 	}
 	proxy.ServeHTTP(lrw, r)
 }
@@ -160,4 +167,16 @@ func applyMiddlewares(dito *app.Dito, handler http.Handler, location config.Loca
 // - string: The normalized path.
 func normalizePath(basePath, additionalPath string) string {
 	return strings.TrimSuffix(basePath, "/") + "/" + strings.TrimPrefix(additionalPath, "/")
+}
+
+// isMetricsEndpoint checks if the request path matches the configured metrics path.
+//
+// Parameters:
+// - requestPath: The path of the incoming HTTP request.
+// - metricsPath: The configured path for metrics.
+//
+// Returns:
+// - bool: True if the request path matches the metrics path, false otherwise.
+func isMetricsEndpoint(requestPath string, metricsPath string) bool {
+	return requestPath == metricsPath
 }

@@ -29,28 +29,22 @@ func setupTestConfig() {
 }
 
 // TestCreateCustomTransport verifies that the custom transport is correctly created with certificates.
-// TestCreateCustomTransport verifies that the custom transport is correctly created with certificates.
 func TestCreateCustomTransport(t *testing.T) {
-	// Creiamo una LocationConfig di esempio con i percorsi dei certificati.
 	location := &config.LocationConfig{
 		CertFile: "testdata/test_cert.pem",
 		KeyFile:  "testdata/test_key.pem",
 		CaFile:   "testdata/test_ca.pem",
 	}
 
-	// Creiamo un'istanza di Caronte con una configurazione fittizia.
 	caronte := &transport.Caronte{
 		RT:       http.DefaultTransport,
 		Location: location,
 	}
 
-	// Simuliamo la creazione del trasporto.
 	customTransport, err := caronte.CreateCustomTransport()
 	assert.NoError(t, err)
 	assert.NotNil(t, customTransport)
 
-	// Verifichiamo che il TLSClientConfig sia impostato correttamente.
-	// Qui non facciamo una type assertion, ma accediamo direttamente.
 	tlsTransport := customTransport
 	assert.NotNil(t, tlsTransport.TLSClientConfig)
 	assert.Len(t, tlsTransport.TLSClientConfig.Certificates, 1)
@@ -65,22 +59,17 @@ func TestAddHeaders(t *testing.T) {
 		ExcludedHeaders: []string{"X-Remove-Header"},
 	}
 
-	// Creiamo un'istanza di Caronte.
 	caronte := &transport.Caronte{
 		Location: location,
 	}
 
-	// Simuliamo una richiesta HTTP.
 	req, _ := http.NewRequest("GET", "http://example.com", nil)
 	req.Header.Set("X-Remove-Header", "RemoveMe")
 
-	// Applichiamo le modifiche agli header.
 	caronte.AddHeaders(req)
 
-	// Verifichiamo che l'header "X-Custom-Header" sia stato aggiunto.
 	assert.Equal(t, "CustomValue", req.Header.Get("X-Custom-Header"))
 
-	// Verifichiamo che l'header "X-Remove-Header" sia stato rimosso.
 	assert.Empty(t, req.Header.Get("X-Remove-Header"))
 }
 

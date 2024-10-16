@@ -8,7 +8,7 @@ import (
 
 // TestResponseWriter tests the custom ResponseWriter implementation.
 func TestResponseWriter(t *testing.T) {
-	// Create an httptest.ResponseRecorder to use as the internal ResponseWriter.
+	// Create a httptest.ResponseRecorder to use as the internal ResponseWriter.
 	inner := httptest.NewRecorder()
 
 	// Create our custom ResponseWriter.
@@ -26,6 +26,10 @@ func TestResponseWriter(t *testing.T) {
 	_, err := rw.Write([]byte(testBody))
 	if err != nil {
 		t.Fatal("Failed to write to ResponseWriter:", err)
+	}
+
+	if rw.BytesWritten != len(testBody)*2 {
+		t.Errorf("Expected bytes written %d, got %d", len(testBody)*2, rw.BytesWritten)
 	}
 
 	if rw.Body.String() != testBody {

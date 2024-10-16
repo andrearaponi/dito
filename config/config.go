@@ -20,12 +20,19 @@ type RedisConfig struct {
 	Password string `yaml:"password"` // Redis server password.
 }
 
+// MetricsConfig holds the configuration for the metrics server.
+type MetricsConfig struct {
+	Enabled bool   `yaml:"enabled"` // Enables/disables the metrics server.
+	Path    string `yaml:"path"`    // Path the metrics server will respond to.
+}
+
 // ProxyConfig holds the configuration for the proxy server.
 type ProxyConfig struct {
 	Port      string           `yaml:"port"`       // Port the proxy will listen on.
 	HotReload bool             `yaml:"hot_reload"` // Enables/disables hot reloading.
 	Logging   Logging          `yaml:"logging"`    // Logging configuration.
 	Redis     RedisConfig      `yaml:"redis"`      // Redis configuration.
+	Metrics   MetricsConfig    `yaml:"metrics"`    // Metrics configuration.
 	Locations []LocationConfig `yaml:"locations"`  // List of configurations for each location.
 }
 
@@ -143,6 +150,10 @@ func IsConfigDifferent(config1, config2 *ProxyConfig) bool {
 		return true
 	}
 	if config1.HotReload != config2.HotReload {
+		return true
+	}
+	if config1.Metrics.Enabled != config2.Metrics.Enabled ||
+		config1.Metrics.Path != config2.Metrics.Path {
 		return true
 	}
 	if config1.Logging.Enabled != config2.Logging.Enabled ||

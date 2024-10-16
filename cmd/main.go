@@ -7,6 +7,8 @@ import (
 	"dito/config"
 	"dito/handlers"
 	"dito/logging"
+	"dito/metrics"
+	cmid "dito/middlewares"
 	"errors"
 	"flag"
 	"fmt"
@@ -34,6 +36,9 @@ func main() {
 	// Load and set the configuration
 	config.LoadAndSetConfig(*configFile)
 	logger := logging.InitializeLogger(config.GetCurrentProxyConfig().Logging.Level)
+
+	// Initialize metrics system
+	metrics.InitMetrics()
 
 	var redisClient *redis.Client
 	if config.GetCurrentProxyConfig().Redis.Enabled {
@@ -75,10 +80,11 @@ func main() {
 func StartServer(dito *app.Dito) {
 	// Create a new HTTP request multiplexer (mux) to handle incoming requests.
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		handlers.DynamicProxyHandler(dito, w, r)
-	})
 
+	mux.Handle("/", cmid.LoggingMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.DynamicProxyHandler(dito, w, r)
+	}), dito))
+	
 	// Create a custom HTTP server with the specified address and handler.
 	server := &http.Server{
 		Addr:    ":" + dito.Config.Port,

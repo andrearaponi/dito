@@ -8,6 +8,11 @@ logging:
   verbose: false # Enable or disable verbose logging.
   level: "info" # Set the log level (e.g., debug, info, warn, error)
 
+# Metrics configuration.
+metrics:
+  enabled: false # Enable or disable metrics.
+  path: "/admin/metrics" # The path on which the metrics will be exposed.
+
 # Redis configuration.
 redis:
   enabled: true # Enable or disable Redis caching.
