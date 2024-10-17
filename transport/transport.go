@@ -5,8 +5,9 @@ import (
 	"crypto/x509"
 	"dito/config"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
+	"sync"
 	"time"
 )
 
@@ -16,52 +17,83 @@ const (
 	XForwardedHost  = "X-Forwarded-Host"
 )
 
-// Caronte is a unified custom transport for HTTP client, handling both header manipulation and certificate-based TLS.
+// Caronte is a custom HTTP transport that handles header manipulation and certificate-based TLS.
 type Caronte struct {
-	RT       http.RoundTripper      // The underlying RoundTripper to execute requests.
-	Location *config.LocationConfig // Configuration for the location, including headers to manipulate and certificates.
+	Location       *config.LocationConfig
+	TransportCache *TransportCache
 }
 
-// RoundTrip executes a single HTTP transaction, manipulates headers, and handles TLS certificates.
+// TransportCache is a thread-safe cache for storing and retrieving custom HTTP transports.
+type TransportCache struct {
+	transports map[string]*http.Transport
+	mu         sync.RWMutex
+}
+
+// NewTransportCache creates a new instance of TransportCache.
+func NewTransportCache() *TransportCache {
+	return &TransportCache{
+		transports: make(map[string]*http.Transport),
+	}
+}
+
+// GetTransport retrieves a custom HTTP transport for the given location configuration.
+// If the transport does not exist, it creates a new one and stores it in the cache.
 //
 // Parameters:
-// - req: The HTTP request to be executed.
+// - location: The configuration for the location, including headers to manipulate and certificates.
 //
 // Returns:
-// - *http.Response: The HTTP response received.
-// - error: An error if the request failed.
-func (t *Caronte) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Get the latest configuration
-	currentConfig := config.GetCurrentProxyConfig()
+// - *http.Transport: The custom HTTP transport.
+// - error: An error if the custom transport could not be created.
+func (c *TransportCache) GetTransport(location *config.LocationConfig) (*http.Transport, error) {
+	c.mu.RLock()
+	transport, ok := c.transports[location.Path]
+	c.mu.RUnlock()
 
-	// Dynamically update the Location with the latest config
-	for i, loc := range currentConfig.Locations {
-		if loc.Path == t.Location.Path {
-			t.Location = &currentConfig.Locations[i]
-			break
-		}
+	if ok {
+		return transport, nil
 	}
 
-	// Handle certificate-based TLS if necessary
-	var transport http.RoundTripper = t.RT
-	if t.Location.CertFile != "" || t.Location.KeyFile != "" || t.Location.CaFile != "" {
-		customTransport, err := t.CreateCustomTransport()
-		if err != nil {
-			return nil, fmt.Errorf("failed to create custom transport: %w", err)
-		}
-		transport = customTransport
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if transport, ok := c.transports[location.Path]; ok {
+		return transport, nil
 	}
 
-	// Manipulate headers before forwarding the request
-	t.AddHeaders(req)
-
-	// Execute the request and capture the response
-	resp, err := transport.RoundTrip(req)
+	customTransport, err := createCustomTransport(location)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	c.transports[location.Path] = customTransport
+	return customTransport, nil
+}
+
+// InvalidateTransport removes the transport associated with the given location path from the cache.
+func (c *TransportCache) InvalidateTransport(locationPath string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.transports, locationPath)
+}
+
+// Clear removes all transports from the cache.
+func (c *TransportCache) Clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.transports = make(map[string]*http.Transport)
+}
+
+// RoundTrip executes a single HTTP transaction, manipulating headers and handling TLS certificates.
+func (t *Caronte) RoundTrip(req *http.Request) (*http.Response, error) {
+	transport, err := t.TransportCache.GetTransport(t.Location)
+	if err != nil {
+		return nil, err
+	}
+
+	t.AddHeaders(req)
+
+	return transport.RoundTrip(req)
 }
 
 // AddHeaders manipulates the request headers according to the LocationConfig.
@@ -103,19 +135,22 @@ func (t *Caronte) AddHeaders(req *http.Request) {
 	}
 }
 
-// CreateCustomTransport creates a custom HTTP transport based on the provided certificate files.
+// createCustomTransport creates a custom HTTP transport based on the provided certificate files.
+//
+// Parameters:
+// - location: The configuration for the location, including headers to manipulate and certificates.
 //
 // Returns:
 // - *http.Transport: The custom HTTP transport.
 // - error: An error if the custom transport could not be created.
-func (t *Caronte) CreateCustomTransport() (*http.Transport, error) {
+func createCustomTransport(location *config.LocationConfig) (*http.Transport, error) {
 	tlsConfig := &tls.Config{}
 
-	// Load CA certificate
-	if t.Location.CaFile != "" {
-		caCert, err := ioutil.ReadFile(t.Location.CaFile)
+	// Load CA certificate if specified
+	if location.CaFile != "" {
+		caCert, err := os.ReadFile(location.CaFile)
 		if err != nil {
-			return nil, fmt.Errorf("error reading CA file: %w", err)
+			return nil, fmt.Errorf("errore nella lettura del CA file: %w", err)
 		}
 
 		caCertPool := x509.NewCertPool()
@@ -123,11 +158,11 @@ func (t *Caronte) CreateCustomTransport() (*http.Transport, error) {
 		tlsConfig.RootCAs = caCertPool
 	}
 
-	// Load client certificate and key
-	if t.Location.CertFile != "" && t.Location.KeyFile != "" {
-		clientCert, err := tls.LoadX509KeyPair(t.Location.CertFile, t.Location.KeyFile)
+	// Load client certificate and key if specified
+	if location.CertFile != "" && location.KeyFile != "" {
+		clientCert, err := tls.LoadX509KeyPair(location.CertFile, location.KeyFile)
 		if err != nil {
-			return nil, fmt.Errorf("error loading client certificate/key: %w", err)
+			return nil, fmt.Errorf("errore nel caricamento del certificato/chiave del client: %w", err)
 		}
 		tlsConfig.Certificates = []tls.Certificate{clientCert}
 	}
@@ -136,20 +171,14 @@ func (t *Caronte) CreateCustomTransport() (*http.Transport, error) {
 	return &http.Transport{
 		TLSClientConfig:       tlsConfig,
 		IdleConnTimeout:       30 * time.Second,
-		MaxIdleConns:          10,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   10,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ResponseHeaderTimeout: 10 * time.Second,
 	}, nil
 }
 
 // contains checks if a header is in the list of excluded headers.
-//
-// Parameters:
-// - slice: The list of headers.
-// - item: The header to check.
-//
-// Returns:
-// - bool: True if the header is in the list, false otherwise.
 func contains(slice []string, item string) bool {
 	for _, s := range slice {
 		if s == item {

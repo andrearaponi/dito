@@ -80,8 +80,8 @@ func ServeProxy(dito *app.Dito, locationIndex int, lrw http.ResponseWriter, r *h
 	location := dito.Config.Locations[locationIndex]
 
 	customTransport := &ct.Caronte{
-		RT:       http.DefaultTransport,
-		Location: &location,
+		TransportCache: dito.TransportCache,
+		Location:       &location,
 	}
 
 	targetURL, err := url.Parse(location.TargetURL)
@@ -148,7 +148,7 @@ func applyMiddlewares(dito *app.Dito, handler http.Handler, location config.Loca
 				handler = cmid.RateLimiterMiddlewareWithRedis(handler, location.RateLimiting, dito.RedisClient, dito.Logger)
 			}
 		case "cache":
-			if location.Cache.Enabled {
+			if dito.RedisClient != nil && dito.Config.Redis.Enabled && location.Cache.Enabled {
 				dito.Logger.Debug(fmt.Sprintf("Applying Cache Middleware with TTL: %d seconds", location.Cache.TTL))
 				handler = cmid.CacheMiddleware(handler, dito, location.Cache)
 			}

@@ -7,6 +7,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"reflect"
 	"regexp"
 	"sync/atomic"
 	"time"
@@ -137,7 +138,7 @@ func LoadAndSetConfig(configFile string) {
 	UpdateConfig(config)
 }
 
-// IsConfigDifferent compares two configurations to determine if they are different.
+// IsConfigDifferent compares two configurations using reflect.DeepEqual to determine if they are different.
 //
 // Parameters:
 // - config1: A pointer to the first ProxyConfig.
@@ -146,118 +147,7 @@ func LoadAndSetConfig(configFile string) {
 // Returns:
 // - bool: True if the configurations are different, false otherwise.
 func IsConfigDifferent(config1, config2 *ProxyConfig) bool {
-	if config1.Port != config2.Port {
-		return true
-	}
-	if config1.HotReload != config2.HotReload {
-		return true
-	}
-	if config1.Metrics.Enabled != config2.Metrics.Enabled ||
-		config1.Metrics.Path != config2.Metrics.Path {
-		return true
-	}
-	if config1.Logging.Enabled != config2.Logging.Enabled ||
-		config1.Logging.Level != config2.Logging.Level ||
-		config1.Logging.Verbose != config2.Logging.Verbose {
-		return true
-	}
-	if config1.Redis.Enabled != config2.Redis.Enabled ||
-		config1.Redis.Host != config2.Redis.Host ||
-		config1.Redis.Port != config2.Redis.Port ||
-		config1.Redis.Password != config2.Redis.Password {
-		return true
-	}
-	if len(config1.Locations) != len(config2.Locations) {
-		return true
-	}
-	for i, loc1 := range config1.Locations {
-		loc2 := config2.Locations[i]
-		if loc1.Path != loc2.Path || loc1.TargetURL != loc2.TargetURL ||
-			loc1.ReplacePath != loc2.ReplacePath ||
-			!areHeadersEqual(loc1.AdditionalHeaders, loc2.AdditionalHeaders) ||
-			!areHeadersEqualList(loc1.ExcludedHeaders, loc2.ExcludedHeaders) ||
-			!areMiddlewareListsEqual(loc1.Middlewares, loc2.Middlewares) ||
-			!compareRateLimiting(&loc1.RateLimiting, &loc2.RateLimiting) ||
-			loc1.CertFile != loc2.CertFile ||
-			loc1.KeyFile != loc2.KeyFile ||
-			loc1.CaFile != loc2.CaFile ||
-			loc1.Cache.Enabled != loc2.Cache.Enabled ||
-			loc1.Cache.TTL != loc2.Cache.TTL {
-			return true
-		}
-	}
-	return false
-}
-
-func areMiddlewareListsEqual(list1, list2 []string) bool {
-	if len(list1) != len(list2) {
-		return false
-	}
-	for i := range list1 {
-		if list1[i] != list2[i] {
-			return false
-		}
-	}
-	return true
-}
-
-// compareRateLimiting compares two RateLimiting configurations.
-//
-// Parameters:
-// - rl1: A pointer to the first RateLimiting configuration.
-// - rl2: A pointer to the second RateLimiting configuration.
-//
-// Returns:
-// - bool: True if the RateLimiting configurations are different, false otherwise.
-func compareRateLimiting(rl1, rl2 *RateLimiting) bool {
-	return rl1.Enabled != rl2.Enabled || rl1.RequestsPerSecond != rl2.RequestsPerSecond || rl1.Burst != rl2.Burst
-}
-
-// areHeadersEqual compares two maps of headers.
-//
-// Parameters:
-// - headers1: The first map of headers.
-// - headers2: The second map of headers.
-//
-// Returns:
-// - bool: True if the headers are equal, false otherwise.
-func areHeadersEqual(headers1, headers2 map[string]string) bool {
-	if len(headers1) != len(headers2) {
-		return false
-	}
-	for k, v := range headers1 {
-		if headers2[k] != v {
-			return false
-		}
-	}
-	return true
-}
-
-// areHeadersEqualList compares two slices of headers.
-//
-// Parameters:
-// - headers1: The first slice of headers.
-// - headers2: The second slice of headers.
-//
-// Returns:
-// - bool: True if the headers are equal, false otherwise.
-func areHeadersEqualList(headers1, headers2 []string) bool {
-	if len(headers1) != len(headers2) {
-		return false
-	}
-
-	headerMap := make(map[string]struct{})
-	for _, header := range headers1 {
-		headerMap[header] = struct{}{}
-	}
-
-	for _, header := range headers2 {
-		if _, exists := headerMap[header]; !exists {
-			return false
-		}
-	}
-
-	return true
+	return !reflect.DeepEqual(config1, config2)
 }
 
 // WatchConfig watches the configuration file for changes and invokes a callback when changes are detected.
@@ -296,7 +186,6 @@ func WatchConfig(configFile string, onChange func(*ProxyConfig), logger *slog.Lo
 				} else if IsConfigDifferent(GetCurrentProxyConfig(), newConfig) {
 					onChange(newConfig)
 				}
-
 				lastModified = fileInfo.ModTime()
 			}
 		}
