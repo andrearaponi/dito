@@ -10,8 +10,8 @@ logging:
 
 # Metrics configuration.
 metrics:
-  enabled: false # Enable or disable metrics.
-  path: "/admin/metrics" # The path on which the metrics will be exposed.
+  enabled: true # Enable or disable metrics.
+  path: "/metrics" # The path on which the metrics will be exposed.
 
 # Redis configuration.
 redis:
@@ -27,15 +27,16 @@ locations:
     replace_path: true # Replace the matched path with the target URL.
     additional_headers:
       # Additional headers to be added to the request.
-      il-molise: non esiste
+      il-molise: non esiste ancora
+      pippo: pluto
     excluded_headers:
       - Cookie # Headers to be excluded from the request.
     middlewares:
-      - rate-limiter-redis
-      - auth
+      #- rate-limiter-redis
+      #- auth
       - cache
     rate_limiting:
-      enabled: true
+      enabled: false
       requests_per_second: 2
       burst: 4
     cache:
