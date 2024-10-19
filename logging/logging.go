@@ -8,10 +8,22 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
 var logger *slog.Logger
+
+// Predefined styles for formatting log messages using the `color` package.
+var (
+	methodStyle       = color.New(color.FgHiWhite, color.BgGreen).SprintFunc()     // methodStyle formats HTTP methods.
+	detailStyle       = color.New(color.FgHiWhite, color.BgRed).SprintFunc()       // detailStyle formats detailed log sections.
+	boldWhiteStyle    = color.New(color.FgWhite, color.Bold).SprintFunc()          // boldWhiteStyle formats text in bold white.
+	urlStyle          = color.New(color.FgHiWhite, color.BgHiCyan).SprintFunc()    // urlStyle formats URLs.
+	headersStyle      = color.New(color.FgHiWhite, color.BgHiMagenta).SprintFunc() // headersStyle formats HTTP headers.
+	statusStyle       = color.New(color.FgHiWhite, color.BgYellow).SprintFunc()    // statusStyle formats HTTP status codes.
+	responseTimeStyle = color.New(color.FgHiWhite, color.BgHiYellow).SprintFunc()  // responseTimeStyle formats response times.
+)
 
 // InitializeLogger initializes a new logger with the specified log level.
 func InitializeLogger(level string) *slog.Logger {
@@ -48,57 +60,41 @@ func GetLogger() *slog.Logger {
 }
 
 // LogRequestVerbose logs detailed information about the HTTP request and response for debugging purposes.
-//
-// Parameters:
-// - req: The HTTP request to be logged.
-// - body: A pointer to the byte slice containing the request body.
-// - headers: A pointer to the map containing the request headers.
-// - statusCode: The HTTP status code of the response.
-// - duration: The duration of the request.
-func LogRequestVerbose(req *http.Request, body *[]byte, headers *map[string][]string, statusCode int, duration time.Duration) {
-	// Define styles for color
-	methodStyle := color.New(color.FgHiWhite, color.BgGreen).SprintFunc()
-	detailStyle := color.New(color.FgHiWhite, color.BgRed).PrintlnFunc()
-	boldWhiteStyle := color.New(color.FgWhite, color.Bold).SprintFunc()
-	urlStyle := color.New(color.FgHiWhite, color.BgHiCyan).SprintFunc()
-	headersStyle := color.New(color.FgHiWhite, color.BgHiMagenta).PrintlnFunc()
-	statusStyle := color.New(color.FgHiWhite, color.BgYellow).SprintFunc()
+func LogRequestVerbose(req *http.Request, body []byte, headers http.Header, statusCode int, duration time.Duration) {
+	var sb strings.Builder
 
-	// Start logging the request
-	fmt.Println()
-	detailStyle("----------- Request Details -----------")
-	fmt.Println()
-	fmt.Printf("%s: %s\n\n", methodStyle("Method:"), boldWhiteStyle(req.Method))
-	fmt.Printf("%s: %s\n\n", urlStyle("URL:"), boldWhiteStyle(req.URL))
+	// Start building the log message
+	sb.WriteString("\n")
+	sb.WriteString(detailStyle("----------- Request Details -----------"))
+	sb.WriteString("\n\n")
+	sb.WriteString(fmt.Sprintf("%s: %s\n\n", methodStyle("Method:"), boldWhiteStyle(req.Method)))
+	sb.WriteString(fmt.Sprintf("%s: %s\n\n", urlStyle("URL:"), boldWhiteStyle(req.URL.String())))
 
-	headersStyle("Request Headers:")
-	for name, headersToPrint := range *headers {
-		for _, h := range headersToPrint {
-			fmt.Printf("\t%s: %s\n", boldWhiteStyle(name), h)
+	sb.WriteString(headersStyle("Request Headers:"))
+	sb.WriteString("\n")
+	for name, values := range headers {
+		for _, h := range values {
+			sb.WriteString(fmt.Sprintf("\t%s: %s\n", boldWhiteStyle(name), h))
 		}
 	}
 
-	fmt.Println()
-	fmt.Printf("%s\n \t%s\n\n", urlStyle("Request Body:"), string(*body))
+	sb.WriteString("\n")
+	sb.WriteString(fmt.Sprintf("%s\n\t%s\n\n", urlStyle("Request Body:"), string(body)))
 
 	// Response details
-	detailStyle("----------- Response Details -----------")
-	fmt.Println()
-	fmt.Printf("%s: %d\n\n", statusStyle("Status Code:"), statusCode)
-	fmt.Printf("%s: %f seconds\n\n", boldWhiteStyle("Response Time:"), duration.Seconds())
+	sb.WriteString(detailStyle("----------- Response Details -----------"))
+	sb.WriteString("\n\n")
+	sb.WriteString(fmt.Sprintf("%s: %d\n\n", statusStyle("Status Code:"), statusCode))
+	sb.WriteString(fmt.Sprintf("%s: %.6f seconds\n\n", boldWhiteStyle("Response Time:"), duration.Seconds()))
 
-	detailStyle("---------------------------------------")
+	sb.WriteString(detailStyle("---------------------------------------"))
+
+	// Print the final log message
+	fmt.Println(sb.String())
 }
 
 // LogRequestCompact logs the HTTP request and response in a compact format.
-//
-// Parameters:
-// - r: The HTTP request to be logged.
-// - body: A pointer to the byte slice containing the request body.
-// - headers: A pointer to the map containing the request headers.
-// - statusCode: The HTTP status code of the response.
-// - duration: The duration of the request.
-func LogRequestCompact(r *http.Request, body *[]byte, headers *map[string][]string, statusCode int, duration time.Duration) {
+func LogRequestCompact(r *http.Request, body []byte, headers http.Header, statusCode int, duration time.Duration) {
 	logger := GetLogger()
 	clientIP := r.RemoteAddr
 	method := r.Method
@@ -107,7 +103,7 @@ func LogRequestCompact(r *http.Request, body *[]byte, headers *map[string][]stri
 	userAgent := r.Header.Get("User-Agent")
 	referer := r.Header.Get("Referer")
 
-	logger.Info(fmt.Sprintf("%s - - \"%s %s %s\" %d \"%s\" \"%s\" %f seconds",
+	logger.Info(fmt.Sprintf("%s - \"%s %s %s\" %d \"%s\" \"%s\" %.6f seconds",
 		clientIP,
 		method,
 		url,
@@ -119,25 +115,27 @@ func LogRequestCompact(r *http.Request, body *[]byte, headers *map[string][]stri
 	))
 }
 
+// LogResponse logs the details of the HTTP response.
 func LogResponse(lrw *writer.ResponseWriter) {
-	detailStyle := color.New(color.FgHiWhite, color.BgRed).PrintlnFunc()
-	responseTimeStyle := color.New(color.FgHiWhite, color.BgHiYellow).SprintFunc()
-	boldWhiteStyle := color.New(color.FgWhite, color.Bold).SprintFunc()
-	headersStyle := color.New(color.FgHiWhite, color.BgHiMagenta).PrintlnFunc()
+	var sb strings.Builder
 
-	fmt.Println()
-	detailStyle("----------- Response Details ----------")
-	fmt.Println()
-	fmt.Printf("%s: %d\n\n", responseTimeStyle("Status Code:"), lrw.StatusCode)
+	sb.WriteString("\n")
+	sb.WriteString(detailStyle("----------- Response Details ----------"))
+	sb.WriteString("\n\n")
+	sb.WriteString(fmt.Sprintf("%s: %d\n\n", responseTimeStyle("Status Code:"), lrw.StatusCode))
 
-	headersStyle("Headers:")
+	sb.WriteString(headersStyle("Headers:"))
+	sb.WriteString("\n")
 	for name, values := range lrw.Header() {
 		for _, value := range values {
-			fmt.Printf("\t%s: %s\n", boldWhiteStyle(name), value)
+			sb.WriteString(fmt.Sprintf("\t%s: %s\n", boldWhiteStyle(name), value))
 		}
 	}
-	fmt.Println()
-	fmt.Printf("%s \t%s", responseTimeStyle("Body:"), string(lrw.Body.Bytes()))
-	fmt.Println()
-	detailStyle("--------------------------------------")
+	sb.WriteString("\n")
+	sb.WriteString(fmt.Sprintf("%s\t%s\n", responseTimeStyle("Body:"), lrw.Body.String()))
+	sb.WriteString("\n")
+	sb.WriteString(detailStyle("--------------------------------------"))
+
+	// Print the final log message
+	fmt.Println(sb.String())
 }

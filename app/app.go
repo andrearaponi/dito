@@ -19,27 +19,28 @@ type Dito struct {
 	TransportCache *transport.TransportCache // TransportCache is a cache for storing custom HTTP transports.
 }
 
-// NewDito creates a new instance of the Dito application structure.
+// NewDito creates a new instance of the Dito application.
 //
 // Parameters:
 // - redisClient: The Redis client instance for Redis operations.
+// - transportConfig: The HTTP transport configuration.
 // - logger: The logger instance for logging within the application.
 //
 // Returns:
-// - *Dito: A pointer to the newly created Dito instance.
-func NewDito(redisClient *redis.Client, logger *slog.Logger) *Dito {
+// - *Dito: A pointer to the newly created Dito application instance.
+func NewDito(redisClient *redis.Client, transportConfig *config.HTTPTransportConfig, logger *slog.Logger) *Dito {
 	return &Dito{
 		Config:         config.GetCurrentProxyConfig(),
 		RedisClient:    redisClient,
 		Logger:         logger,
-		TransportCache: transport.NewTransportCache(),
+		TransportCache: transport.NewTransportCache(*transportConfig),
 	}
 }
 
-// UpdateConfig safely updates the configuration in the Dito instance.
+// UpdateConfig updates the configuration of the Dito application.
 //
 // Parameters:
-// - newConfig: The new configuration to be set.
+// - newConfig: The new proxy configuration to apply.
 func (d *Dito) UpdateConfig(newConfig *config.ProxyConfig) {
 	d.configMutex.Lock()
 	d.Config = newConfig
@@ -48,12 +49,10 @@ func (d *Dito) UpdateConfig(newConfig *config.ProxyConfig) {
 	d.Logger.Warn("Configuration updated in Dito")
 }
 
-// GetCurrentConfig retrieves the current proxy configuration from the Dito instance.
-//
-// This method acquires a read lock to ensure thread-safe access to the configuration.
+// GetCurrentConfig retrieves the current proxy configuration of the Dito application.
 //
 // Returns:
-// - *config.ProxyConfig: The current proxy configuration.
+// - *config.ProxyConfig: A pointer to the current proxy configuration.
 func (d *Dito) GetCurrentConfig() *config.ProxyConfig {
 	d.configMutex.RLock()
 	proxyConfig := d.Config
@@ -61,18 +60,20 @@ func (d *Dito) GetCurrentConfig() *config.ProxyConfig {
 	return proxyConfig
 }
 
-// UpdateComponents updates the logger and Redis client when configuration changes.
+// UpdateComponents updates the components of the Dito application based on the new configuration.
 //
 // Parameters:
-// - newConfig: The new configuration to be set.
+// - newConfig: The new proxy configuration to apply.
 func (d *Dito) UpdateComponents(newConfig *config.ProxyConfig) {
 	d.configMutex.Lock()
 	defer d.configMutex.Unlock()
 
+	// Update the logger if the logging level has changed.
 	if newConfig.Logging.Level != d.Config.Logging.Level {
 		d.Logger = logging.InitializeLogger(newConfig.Logging.Level)
 	}
 
+	// Update the Redis client if the Redis configuration has changed.
 	if newConfig.Redis != d.Config.Redis {
 		if d.RedisClient != nil {
 			d.RedisClient.Close()
@@ -84,5 +85,6 @@ func (d *Dito) UpdateComponents(newConfig *config.ProxyConfig) {
 		}
 	}
 
+	// Update the configuration.
 	d.Config = newConfig
 }

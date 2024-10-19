@@ -4,7 +4,7 @@
     <h1>Dito</h1>
     <p>Advanced Layer 7 Reverse Proxy Server</p>
     <img src="https://img.shields.io/badge/status-active-green.svg">
-    <img src="https://img.shields.io/badge/release-0.3.1-green.svg">
+    <img src="https://img.shields.io/badge/release-0.4.0-green.svg">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg">
     <img src="https://img.shields.io/badge/language-Go-blue.svg">
     <img src="dito.png" alt="Dito Logo" >
@@ -15,14 +15,16 @@
 
 ## Features
 
-- Layer 7 reverse proxy for handling HTTP requests
-- Dynamic configuration reloading (`hot reload`)
-- Middleware support (e.g., an example of authentication, rate limiting, caching)
-- Distributed rate limiting with Redis
-- Distributed caching with Redis
-- Custom TLS certificate management for backends (mTLS support)
-- Header manipulation (additional headers, excluded headers)
-- Logging support with detailed request and response logs
+- **Layer 7 Reverse Proxy**: Handles HTTP and HTTPS requests efficiently.
+- **Dynamic Configuration Reloading** (`hot reload`): Update configurations without restarting the server.
+- **Middleware Support**: Easily integrate custom middleware for authentication, rate limiting, caching, etc.
+- **Distributed Rate Limiting with Redis**: Control request rates across multiple instances.
+- **Distributed Caching with Redis**: Improve performance by caching responses.
+- **Custom TLS Certificate Management**: Support for mTLS and custom certificates for backend connections.
+- **Header Manipulation**: Add or remove HTTP headers as needed.
+- **Advanced Logging**: Asynchronous logging with customizable verbosity and performance optimizations.
+- **Custom Transport Configuration**: Fine-tune HTTP transport settings per location or globally.
+- **Prometheus Metrics**: Monitor performance and behavior with detailed metrics.
 
 ## Project Structure
 
@@ -98,12 +100,46 @@ redis:
    host: "localhost"
    port: "6379"
    password: ""  # Leave empty if no password is required.
+  
+# Configuration for the HTTP transport settings.
+transport:
+  http:
+    idle_conn_timeout: 90s  # The maximum amount of time an idle (keep-alive) connection will remain idle before closing.
+    max_idle_conns: 1000  # The maximum number of idle (keep-alive) connections across all hosts.
+    max_idle_conns_per_host: 200  # The maximum number of idle (keep-alive) connections to keep per-host.
+    max_conns_per_host: 0  # The maximum number of connections per host. 0 means no limit.
+    tls_handshake_timeout: 2s  # The maximum amount of time allowed for the TLS handshake.
+    response_header_timeout: 2s  # The maximum amount of time to wait for a server's response headers after fully writing the request.
+    expect_continue_timeout: 500ms  # The maximum amount of time to wait for a server's first response headers after fully writing the request headers if the request has an "Expect: 100-continue" header.
+    disable_compression: false  # Whether to disable compression (gzip) for requests.
+    dial_timeout: 2s  # The maximum amount of time to wait for a dial to complete.
+    keep_alive: 30s  # The interval between keep-alive probes for an active network connection.
+    force_http2: true  # Whether to force the use of HTTP/2.
 
 # List of location configurations for proxying requests.
 locations:
    - path: "^/dito$" # Regex pattern to match the request path.
      target_url: https://httpbin.org/get # The target URL to which the request will be proxied.
      replace_path: true # Replace the matched path with the target URL.
+     
+     # HTTP transport settings for this location. If not specified, the global settings will be used.
+     transport:
+       http:
+         idle_conn_timeout: 90s  # The maximum amount of time an idle (keep-alive) connection will remain idle before closing.
+         max_idle_conns: 1000  # The maximum number of idle (keep-alive) connections across all hosts.
+         max_idle_conns_per_host: 400  # The maximum number of idle (keep-alive) connections to keep per-host.
+         max_conns_per_host: 0  # The maximum number of connections per host. 0 means no limit.
+         tls_handshake_timeout: 2s  # The maximum amount of time allowed for the TLS handshake.
+         response_header_timeout: 2s  # The maximum amount of time to wait for a server's response headers after fully writing the request.
+         expect_continue_timeout: 1s  # The maximum amount of time to wait for a server's first response headers after fully writing the request headers if the request has an "Expect: 100-continue" header.
+         disable_compression: true  # Whether to disable compression (gzip) for requests.
+         dial_timeout: 2s  # The maximum amount of time to wait for a dial to complete.
+         keep_alive: 30s  # The interval between keep-alive probes for an active network connection.
+         force_http2: false  # Whether to force the use of HTTP/2.
+         cert_file: "" # Optional client certificate file for HTTPS connections.
+         key_file: "" # Optional client key file for HTTPS connections.
+         ca_file: "" # Optional CA certificate file for verifying server certificates.
+     
      additional_headers:
         # Additional headers to be added to the request.
         il-molise: non esiste
@@ -119,9 +155,7 @@ locations:
      cache:
         enabled: true
         ttl: 30
-     cert_file: "" # Optional client certificate file for HTTPS connections.
-     key_file: "" # Optional client key file for HTTPS connections.
-     ca_file: "" # Optional CA certificate file for verifying server certificates.
+    
 ```
 
 ## Middlewares
@@ -163,7 +197,16 @@ The `cache` middleware uses Redis to store responses. It helps in reducing load 
 
 To implement a new middleware, place your logic in the `middlewares/` directory and reference it in the configuration.
 
-## TLS/SSL
+## Custom Transport Configuration
+
+This allows for fine-grained control over how Dito connects to backend services, including:
+
+- **Timeouts and Connection Limits**: Configure timeouts and maximum connections to handle backend service behavior.
+- **TLS Settings**: Manage TLS handshake timeouts and enforce HTTP/2 if needed.
+- **Custom Certificates**: Specify client certificates for mTLS connections to backends.
+
+
+### TLS/SSL
 
 Dito supports mTLS (mutual TLS) for secure connections to backends. You can specify:
 
