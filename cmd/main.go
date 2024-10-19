@@ -15,6 +15,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,6 +25,15 @@ import (
 // main is the entry point of the application.
 // It loads the configuration, initializes the logger and Redis client, and starts the HTTP server.
 func main() {
+	// Start the profiling server for performance analysis
+	//startProfiling()
+
+	// Enable mutex profiling to help identify lock contention issues
+	//runtime.SetMutexProfileFraction(1)
+
+	// Enable block profiling to help identify blocking operations
+	//runtime.SetBlockProfileRate(1)
+
 	// Define a flag for the configuration file path
 	configFile := flag.String("f", "config.yaml", "path to the configuration file")
 	flag.Parse()
@@ -50,8 +60,10 @@ func main() {
 		}
 	}
 
+	transportConfig := &config.GetCurrentProxyConfig().Transport.HTTP
+
 	// Create a new Dito instance
-	dito := app.NewDito(redisClient, logger)
+	dito := app.NewDito(redisClient, transportConfig, logger)
 
 	// Define a callback function to handle configuration changes
 	onChange := func(newConfig *config.ProxyConfig) {
@@ -84,7 +96,7 @@ func StartServer(dito *app.Dito) {
 	mux.Handle("/", cmid.LoggingMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.DynamicProxyHandler(dito, w, r)
 	}), dito))
-	
+
 	// Create a custom HTTP server with the specified address and handler.
 	server := &http.Server{
 		Addr:    ":" + dito.Config.Port,
@@ -130,3 +142,14 @@ func StartServer(dito *app.Dito) {
 	<-idleConnsClosed
 	dito.Logger.Info("All connections closed, exiting.")
 }
+
+// Uncomment the following function to enable pprof for profiling.
+// This will start pprof on port 6060 for performance analysis.
+// func startProfiling() {
+// 	go func() {
+// 		log.Println("Starting pprof on :6060")
+// 		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+// 			log.Fatal("pprof failed:", err)
+// 		}
+// 	}()
+// }

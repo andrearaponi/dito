@@ -21,6 +21,39 @@ type RedisConfig struct {
 	Password string `yaml:"password"` // Redis server password.
 }
 
+// HTTPTransportConfig holds the configuration settings for the HTTP transport.
+//
+// Fields:
+// - IdleConnTimeout: The maximum amount of time an idle (keep-alive) connection will remain idle before closing.
+// - MaxIdleConns: The maximum number of idle (keep-alive) connections across all hosts.
+// - MaxIdleConnsPerHost: The maximum number of idle (keep-alive) connections to keep per-host.
+// - TLSHandshakeTimeout: The maximum amount of time allowed for the TLS handshake.
+// - ResponseHeaderTimeout: The maximum amount of time to wait for a server's response headers after fully writing the request.
+// - ExpectContinueTimeout: The maximum amount of time to wait for a server's first response headers after fully writing the request headers if the request has an "Expect: 100-continue" header.
+// - DisableCompression: Whether to disable compression (gzip) for requests.
+// - DialTimeout: The maximum amount of time to wait for a dial to complete.
+// - KeepAlive: The interval between keep-alive probes for an active network connection.
+type HTTPTransportConfig struct {
+	IdleConnTimeout       time.Duration `yaml:"idle_conn_timeout"`
+	MaxIdleConns          int           `yaml:"max_idle_conns"`
+	MaxIdleConnsPerHost   int           `yaml:"max_idle_conns_per_host"`
+	MaxConnsPerHost       int           `yaml:"max_conns_per_host"`
+	TLSHandshakeTimeout   time.Duration `yaml:"tls_handshake_timeout"`
+	ResponseHeaderTimeout time.Duration `yaml:"response_header_timeout"`
+	ExpectContinueTimeout time.Duration `yaml:"expect_continue_timeout"`
+	DisableCompression    bool          `yaml:"disable_compression"`
+	ForceHTTP2            bool          `yaml:"force_http2"`
+	DialTimeout           time.Duration `yaml:"dial_timeout"`
+	KeepAlive             time.Duration `yaml:"keep_alive"`
+	CertFile              string        `yaml:"cert_file"` // Path to the certificate file.
+	KeyFile               string        `yaml:"key_file"`  // Path to the key file.
+	CaFile                string        `yaml:"ca_file"`   // Path to the CA file.
+}
+
+type TransportConfig struct {
+	HTTP HTTPTransportConfig `yaml:"http"`
+}
+
 // MetricsConfig holds the configuration for the metrics server.
 type MetricsConfig struct {
 	Enabled bool   `yaml:"enabled"` // Enables/disables the metrics server.
@@ -35,6 +68,7 @@ type ProxyConfig struct {
 	Redis     RedisConfig      `yaml:"redis"`      // Redis configuration.
 	Metrics   MetricsConfig    `yaml:"metrics"`    // Metrics configuration.
 	Locations []LocationConfig `yaml:"locations"`  // List of configurations for each location.
+	Transport TransportConfig  `yaml:"transport"`  // Transport configuration.
 }
 
 // RateLimiting holds the configuration for rate limiting.
@@ -68,9 +102,7 @@ type LocationConfig struct {
 	RateLimiting      RateLimiting      `yaml:"rate_limiting"`      // Rate Limiting configuration.
 	EnableCompression bool              `yaml:"enable_compression"` // Flag to enable Gzip Compression.
 	Cache             Cache             `yaml:"cache"`              // Cache configuration.engin
-	CertFile          string            `yaml:"cert_file"`          // Path to the certificate file.
-	KeyFile           string            `yaml:"key_file"`           // Path to the key file.
-	CaFile            string            `yaml:"ca_file"`            // Path to the CA file.
+	Transport         *TransportConfig  `yaml:"transport"`          // Optional Transport configuration for this location.
 }
 
 var currentConfig atomic.Value
@@ -100,6 +132,10 @@ func LoadConfiguration(file string) (*ProxyConfig, error) {
 			return nil, fmt.Errorf("error compiling regex for path %s: %v", location.Path, err)
 		}
 		config.Locations[i].CompiledRegex = regex
+
+		if location.Transport == nil {
+			config.Locations[i].Transport = &config.Transport
+		}
 	}
 
 	return &config, nil

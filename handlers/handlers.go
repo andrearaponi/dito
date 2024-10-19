@@ -1,15 +1,13 @@
 package handlers
 
 import (
-	"bytes"
 	"dito/app"
 	"dito/config"
 	"dito/metrics"
 	cmid "dito/middlewares"
-	ct "dito/transport"
+	"dito/transport"
 	"dito/writer"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -29,19 +27,6 @@ const (
 // - w: The HTTP response writer.
 // - r: The HTTP request.
 func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request) {
-	var bodyBytes []byte
-	var errBody error
-
-	if r.Body != nil {
-		bodyBytes, errBody = io.ReadAll(r.Body)
-		if errBody != nil {
-			dito.Logger.Error("Error reading request body: ", errBody)
-			http.Error(w, InternalServerErrorMessage, http.StatusInternalServerError)
-			return
-		}
-		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-		dito.Logger.Debug(fmt.Sprintf("Request body: %s", string(bodyBytes)))
-	}
 
 	if isMetricsEndpoint(r.URL.Path, dito.Config.Metrics.Path) && dito.Config.Metrics.Enabled {
 		dito.Logger.Debug("Handling metrics endpoint")
@@ -56,11 +41,13 @@ func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request)
 				ServeProxy(dito, i, w, r)
 			})
 
-			handlerWithMiddlewares := applyMiddlewares(dito, handler, location)
-
 			lrw := &writer.ResponseWriter{ResponseWriter: w}
-			handlerWithMiddlewares.ServeHTTP(lrw, r)
-
+			if len(location.Middlewares) > 0 {
+				handlerWithMiddlewares := applyMiddlewares(dito, handler, location)
+				handlerWithMiddlewares.ServeHTTP(lrw, r)
+			} else {
+				handler.ServeHTTP(lrw, r)
+			}
 			return
 		}
 	}
@@ -79,9 +66,9 @@ func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request)
 func ServeProxy(dito *app.Dito, locationIndex int, lrw http.ResponseWriter, r *http.Request) {
 	location := dito.Config.Locations[locationIndex]
 
-	customTransport := &ct.Caronte{
-		TransportCache: dito.TransportCache,
+	caronteTransport := &transport.Caronte{
 		Location:       &location,
+		TransportCache: dito.TransportCache,
 	}
 
 	targetURL, err := url.Parse(location.TargetURL)
@@ -107,7 +94,7 @@ func ServeProxy(dito *app.Dito, locationIndex int, lrw http.ResponseWriter, r *h
 
 			req.Host = targetURL.Host
 		},
-		Transport: customTransport,
+		Transport: caronteTransport,
 		ErrorHandler: func(w http.ResponseWriter, req *http.Request, err error) {
 			dito.Logger.Error(fmt.Sprintf("Error proxying request: %v", err))
 

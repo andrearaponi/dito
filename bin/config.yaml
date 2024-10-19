@@ -20,21 +20,42 @@ redis:
   port: "6379"
   password: ""  # Leave empty if no password is required.
 
+# Transport configuration.
+transport:
+  http:
+    idle_conn_timeout: 90s
+    max_idle_conns: 1000
+    max_idle_conns_per_host: 200
+    max_conns_per_host: 0
+    tls_handshake_timeout: 2s
+    response_header_timeout: 2s
+    expect_continue_timeout: 500ms
+    disable_compression: false
+    dial_timeout: 2s
+    keep_alive: 30s
+    force_http2: true
+    #cert_file: "/home/andy/dev/personal/api-test/client_cert.pem" # Optional client certificate file for HTTPS connections.
+    #key_file: "/home/andy/dev/personal/api-test/client_key.pem" # Optional client key file for HTTPS connections.
+    #ca_file: "/home/andy/dev/personal/api-test/test_ca.pem" # Optional CA certificate file for verifying server certificates.
+
+
+
 # List of location configurations for proxying requests.
 locations:
   - path: "^/dito$" # Regex pattern to match the request path.
-    target_url: https://httpbin.org/get # The target URL to which the request will be proxied.
+    target_url: https://httpbin.org/get
+    # The target URL to which the request will be proxied.
     replace_path: true # Replace the matched path with the target URL.
+
     additional_headers:
       # Additional headers to be added to the request.
       il-molise: non esiste ancora
-      pippo: pluto
     excluded_headers:
-      - Cookie # Headers to be excluded from the request.
+      #- Cookie # Headers to be excluded from the request.
     middlewares:
       #- rate-limiter-redis
       #- auth
-      - cache
+      #- cache
     rate_limiting:
       enabled: false
       requests_per_second: 2
@@ -42,9 +63,7 @@ locations:
     cache:
       enabled: true
       ttl: 30
-    cert_file: "" # Optional client certificate file for HTTPS connections.
-    key_file: "" # Optional client key file for HTTPS connections.
-    ca_file: "" # Optional CA certificate file for verifying server certificates.
+
 
   - path: "^/todos/(?:[1-9]|10)$" # Regex pattern to match the request path.
     target_url: https://jsonplaceholder.typicode.com/ # The target URL to which the request will be proxied.
@@ -59,7 +78,5 @@ locations:
       burst: 4
     excluded_headers:
       - Cookie # Headers to be excluded from the request.
-    cert_file: "" # Optional client certificate file.
-    key_file: "" # Optional client key file.
-    ca_file: "" # Optional CA certificate file.
+
 
