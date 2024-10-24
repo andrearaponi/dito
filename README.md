@@ -2,7 +2,6 @@
 
 <div align="center">
     <h1>Dito</h1>
-    <p>An Advanced Reverse Proxy Server</p>
     <img src="https://img.shields.io/badge/status-active-green.svg">
     <img src="https://img.shields.io/badge/release-0.4.0-green.svg">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg">
