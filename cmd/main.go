@@ -14,10 +14,12 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"log"
+	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 )
@@ -25,14 +27,8 @@ import (
 // main is the entry point of the application.
 // It loads the configuration, initializes the logger and Redis client, and starts the HTTP server.
 func main() {
-	// Start the profiling server for performance analysis
-	//startProfiling()
-
-	// Enable mutex profiling to help identify lock contention issues
-	//runtime.SetMutexProfileFraction(1)
-
-	// Enable block profiling to help identify blocking operations
-	//runtime.SetBlockProfileRate(1)
+	// Define a flag to enable the profiler
+	enableProfiler := flag.Bool("enable-profiler", false, "enable the profiler")
 
 	// Define a flag for the configuration file path
 	configFile := flag.String("f", "config.yaml", "path to the configuration file")
@@ -76,6 +72,11 @@ func main() {
 	// Watch the configuration file for changes if hot reload is enabled
 	if dito.GetCurrentConfig().HotReload {
 		go config.WatchConfig(*configFile, onChange, logger)
+	}
+
+	// Start the profiler if the flag is enabled
+	if *enableProfiler {
+		startProfiling(dito.Logger)
 	}
 
 	// Start the HTTP server
@@ -143,13 +144,19 @@ func StartServer(dito *app.Dito) {
 	dito.Logger.Info("All connections closed, exiting.")
 }
 
-// Uncomment the following function to enable pprof for profiling.
-// This will start pprof on port 6060 for performance analysis.
-// func startProfiling() {
-// 	go func() {
-// 		log.Println("Starting pprof on :6060")
-// 		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
-// 			log.Fatal("pprof failed:", err)
-// 		}
-// 	}()
-// }
+// startProfiling enables various runtime profiling options and starts the pprof server.
+func startProfiling(logger *slog.Logger) {
+	// Start the profiling server for performance analysis
+	go func() {
+		logger.Info("Starting pprof on :6060")
+		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+			logger.Error("pprof failed:", err)
+		}
+	}()
+
+	// Enable mutex profiling to help identify lock contention issues
+	runtime.SetMutexProfileFraction(1)
+
+	// Enable block profiling to help identify blocking operations
+	runtime.SetBlockProfileRate(1)
+}
