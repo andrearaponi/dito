@@ -15,7 +15,7 @@ metrics:
 
 # Redis configuration.
 redis:
-  enabled: true # Enable or disable Redis caching.
+  enabled: false # Enable or disable Redis caching.
   host: "localhost"
   port: "6379"
   password: ""  # Leave empty if no password is required.
@@ -55,7 +55,7 @@ locations:
     middlewares:
       #- rate-limiter-redis
       #- auth
-      #- cache
+      - cache
     rate_limiting:
       enabled: false
       requests_per_second: 2
