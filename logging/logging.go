@@ -4,6 +4,7 @@ import (
 	"dito/writer"
 	"fmt"
 	"github.com/fatih/color"
+	"github.com/gorilla/websocket"
 	"github.com/lmittmann/tint"
 	"log/slog"
 	"net/http"
@@ -113,6 +114,88 @@ func LogRequestCompact(r *http.Request, body []byte, headers http.Header, status
 		userAgent,
 		duration.Seconds(),
 	))
+}
+
+// LogWebSocketMessage logs the details of a WebSocket message.
+func LogWebSocketMessageOLD(messageType int, message []byte, err error, duration time.Duration) {
+	logger := GetLogger()
+	messageTypeStr := "Unknown"
+	switch messageType {
+	case websocket.TextMessage:
+		messageTypeStr = "Text"
+	case websocket.BinaryMessage:
+		messageTypeStr = "Binary"
+	case websocket.CloseMessage:
+		messageTypeStr = "Close"
+	case websocket.PingMessage:
+		messageTypeStr = "Ping"
+	case websocket.PongMessage:
+		messageTypeStr = "Pong"
+	}
+
+	if err != nil {
+		logger.Error(fmt.Sprintf("WebSocket %s Message Error: %v", "error", messageTypeStr, err))
+	} else {
+		logger.Info(fmt.Sprintf("WebSocket %s Message: %s (%.6f seconds)", "error", messageTypeStr, string(message), duration.Seconds()))
+	}
+}
+
+// LogWebSocketMessage logs the details of a WebSocket message.
+func LogWebSocketMessage(messageType int, message []byte, err error, duration time.Duration) {
+	logger := GetLogger()
+	messageTypeStr := getMessageTypeString(messageType)
+
+	// Dettagli da loggare
+	logDetails := map[string]interface{}{
+		"type":     messageTypeStr,
+		"duration": duration.Seconds(),
+	}
+
+	// Log in caso di errore
+	if err != nil {
+		logDetails["error"] = err.Error()
+		logger.Error("WebSocket Message Error", slog.Any("details", logDetails))
+		return
+	}
+
+	// Logga il contenuto del messaggio in base al tipo
+	switch messageType {
+	case websocket.TextMessage:
+		logDetails["message"] = truncateMessage(message)
+		logger.Info("WebSocket Text Message", slog.Any("details", logDetails))
+	case websocket.PingMessage, websocket.PongMessage:
+		logger.Debug("WebSocket Ping/Pong Message", slog.Any("details", logDetails))
+	default:
+		logDetails["message_size"] = len(message)
+		logger.Info("WebSocket Message", slog.Any("details", logDetails))
+	}
+}
+
+// Funzione di utilità per abbreviare messaggi molto lunghi
+func truncateMessage(message []byte) string {
+	const maxLength = 100
+	if len(message) > maxLength {
+		return string(message[:maxLength]) + "..."
+	}
+	return string(message)
+}
+
+// Funzione di utilità per ottenere la descrizione del tipo di messaggio
+func getMessageTypeString(messageType int) string {
+	switch messageType {
+	case websocket.TextMessage:
+		return "Text"
+	case websocket.BinaryMessage:
+		return "Binary"
+	case websocket.CloseMessage:
+		return "Close"
+	case websocket.PingMessage:
+		return "Ping"
+	case websocket.PongMessage:
+		return "Pong"
+	default:
+		return "Unknown"
+	}
 }
 
 // LogResponse logs the details of the HTTP response.

@@ -42,10 +42,17 @@ transport:
 
 # List of location configurations for proxying requests.
 locations:
+  - path: "^/test-ws$" # Il path per cui vuoi abilitare il WebSocket
+    target_url: "wss://echo.websocket.org"
+    enable_websocket: true # Abilita il supporto WebSocket per questa location
+    replace_path: true # Sostituisce il path con il target URL
+
   - path: "^/dito$" # Regex pattern to match the request path.
     target_url: https://httpbin.org/get
+    enable_websocket: true # Enable or disable WebSocket support.
     # The target URL to which the request will be proxied.
     replace_path: true # Replace the matched path with the target URL.
+
 
     additional_headers:
       # Additional headers to be added to the request.
@@ -55,13 +62,13 @@ locations:
     middlewares:
       #- rate-limiter-redis
       #- auth
-      - cache
+      #- cache
     rate_limiting:
       enabled: false
       requests_per_second: 2
       burst: 4
     cache:
-      enabled: true
+      enabled: false
       ttl: 30
 
 

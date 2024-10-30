@@ -4,11 +4,13 @@ go 1.23.2
 
 require (
 	github.com/fatih/color v1.16.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/lmittmann/tint v1.0.5
 	github.com/prometheus/client_golang v1.20.4
 	github.com/prometheus/client_model v0.6.1
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/stretchr/testify v1.9.0
+	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
 	golang.org/x/time v0.6.0
 	gopkg.in/yaml.v3 v3.0.1
 )

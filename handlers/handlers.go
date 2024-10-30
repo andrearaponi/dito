@@ -6,6 +6,7 @@ import (
 	"dito/metrics"
 	cmid "dito/middlewares"
 	"dito/transport"
+	"dito/websocket"
 	"dito/writer"
 	"fmt"
 	"net/http"
@@ -37,6 +38,12 @@ func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request)
 
 	for i, location := range dito.Config.Locations {
 		if location.CompiledRegex.MatchString(r.URL.Path) {
+			if location.EnableWebsocket && websocket.IsWebSocketRequest(r) {
+				dito.Logger.Info("Upgrading to WebSocket for", "path", location.Path)
+				websocket.HandleWebSocketProxy(w, r, location.TargetURL, dito.Logger)
+				return
+
+			}
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				ServeProxy(dito, i, w, r)
 			})

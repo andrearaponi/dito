@@ -42,10 +42,17 @@ transport:
 
 # List of location configurations for proxying requests.
 locations:
+  - path: "^/test-ws$"
+    target_url: "wss://echo.websocket.org"
+    enable_websocket: true n
+    replace_path: true
+
   - path: "^/dito$" # Regex pattern to match the request path.
     target_url: https://httpbin.org/get
+    enable_websocket: true # Enable or disable WebSocket support.
     # The target URL to which the request will be proxied.
     replace_path: true # Replace the matched path with the target URL.
+
 
     additional_headers:
       # Additional headers to be added to the request.
