@@ -1,7 +1,9 @@
 package writer
 
 import (
+	"bufio"
 	"bytes"
+	"net"
 	"net/http"
 )
 
@@ -50,4 +52,20 @@ func (rw *ResponseWriter) Write(b []byte) (int, error) {
 	rw.BytesWritten += n // Update the total bytes written again if necessary
 
 	return n, err
+}
+
+// Hijack allows the caller to take over the connection from the HTTP server.
+// This function is typically used for implementing WebSockets or other protocols
+// that require raw network access.
+//
+// Returns:
+// - net.Conn: The underlying network connection.
+// - *bufio.ReadWriter: A buffered read/write interface for the connection.
+// - error: An error if the hijacking fails.
+func (w *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := w.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, http.ErrNotSupported
+	}
+	return hijacker.Hijack()
 }

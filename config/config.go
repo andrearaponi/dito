@@ -94,6 +94,7 @@ type Logging struct {
 type LocationConfig struct {
 	Path              string            `yaml:"path"` // Path the proxy will respond to.
 	CompiledRegex     *regexp.Regexp    // Compiled regular expression for the path.
+	EnableWebsocket   bool              `yaml:"enable_websocket"`   // Enables/disables WebSocket for this location.
 	TargetURL         string            `yaml:"target_url"`         // Destination URL for this location.
 	ReplacePath       bool              `yaml:"replace_path"`       // Whether to replace the path entirely.
 	AdditionalHeaders map[string]string `yaml:"additional_headers"` // Additional headers to add for this location.

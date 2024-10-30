@@ -3,7 +3,7 @@
 <div align="center">
     <h1>Dito</h1>
     <img src="https://img.shields.io/badge/status-active-green.svg">
-    <img src="https://img.shields.io/badge/release-0.4.2-green.svg">
+    <img src="https://img.shields.io/badge/release-0.5.0-green.svg">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg">
     <img src="https://img.shields.io/badge/language-Go-blue.svg">
     <img src="dito.png" alt="Dito Logo" >
@@ -15,6 +15,7 @@
 ## Features
 
 - **Layer 7 Reverse Proxy**: Handles HTTP and HTTPS requests efficiently.
+- **WebSockets Support**: Proxy WebSocket connections with ease.
 - **Dynamic Configuration Reloading** (`hot reload`): Update configurations without restarting the server.
 - **Middleware Support**: Easily integrate custom middleware for authentication, rate limiting, caching, etc.
 - **Distributed Rate Limiting with Redis**: Control request rates across multiple instances.
@@ -34,6 +35,7 @@
 - `handlers/`: Core handlers for request routing and reverse proxy logic.
 - `middlewares/`: Custom middleware implementations (e.g., authentication, caching, rate limiting).
 - `transport/`: HTTP transport customization (including TLS management).
+- `websockets/`: WebSockets support for proxying WebSocket connections."
 - `writer/`: Custom HTTP response writers for capturing status codes.
 - `logging/`: Utilities for logging requests and responses.
 - `metrics/`: Prometheus metrics collection and handling.
@@ -117,6 +119,11 @@ transport:
 
 # List of location configurations for proxying requests.
 locations:
+   - path: "^/test-ws$" # Regex pattern to match the request path.
+     target_url: "wss://echo.websocket.org" # The target URL to which the request will be proxied.
+     enable_websocket: true # Enable WebSocket support for this location.
+     replace_path: true # Replace the matched path with the target URL. 
+     
    - path: "^/dito$" # Regex pattern to match the request path.
      target_url: https://httpbin.org/get # The target URL to which the request will be proxied.
      replace_path: true # Replace the matched path with the target URL.
@@ -203,6 +210,32 @@ This allows for fine-grained control over how Dito connects to backend services,
 - **Timeouts and Connection Limits**: Configure timeouts and maximum connections to handle backend service behavior.
 - **TLS Settings**: Manage TLS handshake timeouts and enforce HTTP/2 if needed.
 - **Custom Certificates**: Specify client certificates for mTLS connections to backends.
+
+### WebSocket Support
+
+Dito supports WebSocket proxying, allowing you to seamlessly forward WebSocket connections to your backend servers. This can be configured per location, enabling WebSocket support on specific routes.
+
+#### Configuration
+
+To enable WebSocket support, add `enable_websocket: true` to the location configuration. Here’s an example:
+
+```yaml
+# List of location configurations for proxying requests.
+locations:
+  - path: "^/test-ws$" # Regex pattern to match the request path.
+    target_url: "wss://echo.websocket.org" # The target URL to which the request will be proxied.
+    enable_websocket: true # Enable WebSocket support for this location.
+    replace_path: true # Replace the matched path with the target URL.
+```
+#### Upcoming Enhancements
+
+Future versions of Dito will include more advanced WebSocket features, such as:
+
+- **Enhanced TLS Support**: Configurable TLS settings for secure WebSocket connections, allowing for encrypted communication and improved security.
+- **Comprehensive Error Handling**: Improved resilience and error management for WebSocket connections to ensure stability during unexpected interruptions.
+- **Detailed Metrics**: Real-time metrics for WebSocket traffic, enabling better performance monitoring and insight into connection stability and throughput.
+
+These features aim to provide full control, security, and reliability for WebSocket connections in Dito, enhancing the overall communication experience.
 
 
 ### TLS/SSL
