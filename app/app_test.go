@@ -6,6 +6,8 @@ import (
 	"dito/logging"
 	"log/slog"
 	"testing"
+
+	"github.com/redis/go-redis/v9"
 )
 
 // TestLoggerUpdate tests if the logger updates correctly when the log level changes.
@@ -21,7 +23,11 @@ func TestLoggerUpdate(t *testing.T) {
 	config.UpdateConfig(initialConfig)
 
 	// Create a new Dito instance with the initial logger
-	dito := NewDito(nil, logging.InitializeLogger(initialConfig.Logging.Level))
+	// Create a mock Redis client and HTTP transport config for testing
+	mockRedisClient := &redis.Client{}
+	mockHTTPTransportConfig := &config.HTTPTransportConfig{}
+
+	dito := NewDito(mockRedisClient, mockHTTPTransportConfig, logging.InitializeLogger(initialConfig.Logging.Level))
 
 	// Check if the initial logger level is set to "info"
 	if dito.Logger.Handler().Enabled(context.Background(), slog.LevelDebug) {

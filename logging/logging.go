@@ -3,14 +3,15 @@ package logging
 import (
 	"dito/writer"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/gorilla/websocket"
-	"github.com/lmittmann/tint"
 	"log/slog"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/fatih/color"
+	"github.com/gorilla/websocket"
+	"github.com/lmittmann/tint"
 )
 
 var logger *slog.Logger
@@ -134,9 +135,9 @@ func LogWebSocketMessageOLD(messageType int, message []byte, err error, duration
 	}
 
 	if err != nil {
-		logger.Error(fmt.Sprintf("WebSocket %s Message Error: %v", "error", messageTypeStr, err))
+		logger.Error(fmt.Sprintf("WebSocket %s Message Error: %v", messageTypeStr, err))
 	} else {
-		logger.Info(fmt.Sprintf("WebSocket %s Message: %s (%.6f seconds)", "error", messageTypeStr, string(message), duration.Seconds()))
+		logger.Info(fmt.Sprintf("WebSocket %s Message: %s (%.6f seconds)", messageTypeStr, string(message), duration.Seconds()))
 	}
 }
 

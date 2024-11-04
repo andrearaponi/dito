@@ -12,7 +12,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/redis/go-redis/v9"
 	"log"
 	"log/slog"
 	"net/http"
@@ -22,6 +21,8 @@ import (
 	"runtime"
 	"syscall"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 // main is the entry point of the application.
@@ -122,7 +123,7 @@ func StartServer(dito *app.Dito) {
 
 		// Attempt to gracefully shut down the server.
 		if err := server.Shutdown(ctx); err != nil {
-			dito.Logger.Error("Server forced to shutdown: ", err)
+			dito.Logger.Error("Server forced to shutdown", "error", err)
 		} else {
 			dito.Logger.Info("Server shut down gracefully.")
 		}
@@ -135,7 +136,7 @@ func StartServer(dito *app.Dito) {
 
 	// Start the HTTP server.
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-		dito.Logger.Error("Server failed to start: ", err)
+		dito.Logger.Error("Server failed to start", "error", err)
 		log.Fatal(err)
 	}
 
@@ -150,7 +151,7 @@ func startProfiling(logger *slog.Logger) {
 	go func() {
 		logger.Info("Starting pprof on :6060")
 		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
-			logger.Error("pprof failed:", err)
+			logger.Error("pprof failed", "error", err)
 		}
 	}()
 
