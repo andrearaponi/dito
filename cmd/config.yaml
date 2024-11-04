@@ -44,7 +44,7 @@ transport:
 locations:
   - path: "^/test-ws$"
     target_url: "wss://echo.websocket.org"
-    enable_websocket: true n
+    enable_websocket: true
     replace_path: true
 
   - path: "^/dito$" # Regex pattern to match the request path.
