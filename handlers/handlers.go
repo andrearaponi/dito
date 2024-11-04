@@ -80,7 +80,7 @@ func ServeProxy(dito *app.Dito, locationIndex int, lrw http.ResponseWriter, r *h
 
 	targetURL, err := url.Parse(location.TargetURL)
 	if err != nil {
-		dito.Logger.Error("Error parsing the target URL: ", err)
+		dito.Logger.Error("Error parsing the target URL: ", "error", err)
 		http.Error(lrw, InternalServerErrorMessage, http.StatusInternalServerError)
 		return
 	}

@@ -6,13 +6,15 @@ import (
 	"dito/config"
 	"dito/handlers"
 	"dito/logging"
-	"github.com/redis/go-redis/v9"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"testing"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/assert"
 )
 
 // setupTestConfig initializes a sample configuration for testing.
@@ -56,7 +58,29 @@ func setupDito() *app.Dito {
 	logger := logging.InitializeLogger("info")
 
 	// Create a new Dito instance.
-	return app.NewDito(redisClient, logger)
+	// Create a sample HTTPTransportConfig.
+	httpTransportConfig := &config.HTTPTransportConfig{
+		IdleConnTimeout:       90 * time.Second,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   10,
+		MaxConnsPerHost:       100,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		DisableCompression:    false,
+		ForceHTTP2:            true,
+		DialTimeout:           30 * time.Second,
+		KeepAlive:             30 * time.Second,
+		CertFile:              "testdata/test_cert.pem",
+		KeyFile:               "testdata/test_key.pem",
+		CaFile:                "testdata/test_ca.pem",
+	}
+
+	dito := app.NewDito(redisClient, httpTransportConfig, logger)
+	if dito == nil {
+		panic("Failed to initialize Dito instance")
+	}
+	return dito
 }
 
 func TestDynamicProxyHandler(t *testing.T) {
@@ -71,7 +95,9 @@ func TestDynamicProxyHandler(t *testing.T) {
 	// Create a ResponseRecorder to capture the response.
 	rr := httptest.NewRecorder()
 
-	// Create a dummy request body.
+	if dito == nil {
+		t.Fatal("Dito instance is nil")
+	}
 	req.Body = io.NopCloser(bytes.NewBufferString("Test body"))
 
 	// Call the handler.

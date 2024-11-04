@@ -2,9 +2,10 @@ package logging
 
 import (
 	"bytes"
-	"github.com/lmittmann/tint"
 	"log/slog"
 	"os"
+
+	"github.com/lmittmann/tint"
 
 	"net/http"
 	"testing"
@@ -22,7 +23,7 @@ func TestLogRequestVerbose(t *testing.T) {
 	duration := 2 * time.Second
 
 	body := []byte("request body")
-	LogRequestVerbose(req, &body, &headers, statusCode, duration)
+	LogRequestVerbose(req, body, headers, statusCode, duration)
 }
 
 // TestLogRequestCompact tests the LogRequestCompact function.
@@ -36,7 +37,7 @@ func TestLogRequestCompact(t *testing.T) {
 	duration := 2 * time.Second
 
 	body := []byte("request body")
-	LogRequestCompact(req, &body, &headers, statusCode, duration)
+	LogRequestCompact(req, body, headers, statusCode, duration)
 }
 
 // InitializeLogger initializes a new logger with the specified log level.
