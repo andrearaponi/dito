@@ -1,0 +1,16 @@
+Copyright 2024 Andrea Raponi
+
+This product includes software developed by the Dito project:
+https://github.com/andrearaponi/dito
+
+This product also includes third-party software distributed under their respective licenses:
+
+- github.com/beorn7/perks/quantile: MIT License
+- github.com/cespare/xxhash/v2: MIT License
+- github.com/dgryski/go-rendezvous: MIT License
+- github.com/gorilla/websocket: BSD-2-Clause License
+- github.com/klauspost/compress: Apache License 2.0
+- github.com/redis/go-redis/v9: BSD-2-Clause License
+- golang.org/x/sys/unix: BSD-3-Clause License
+- gopkg.in/yaml.v3: MIT License
+- google.golang.org/protobuf: BSD-3-Clause License
