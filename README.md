@@ -4,7 +4,7 @@
     <h1>Dito</h1>
     <img src="https://img.shields.io/badge/status-active-green.svg">
     <img src="https://img.shields.io/badge/release-0.6.0-green.svg">
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg">
+    <img src="https://img.shields.io/badge/license-Apache2-blue.svg">
     <img src="https://img.shields.io/badge/language-Go-blue.svg">
     <img src="dito.png" alt="Dito Logo" >
 </div>
