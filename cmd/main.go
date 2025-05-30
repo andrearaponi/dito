@@ -3,15 +3,14 @@ package main
 import (
 	"context"
 	"dito/app"
-	credis "dito/client/redis"
 	"dito/config"
 	"dito/handlers"
 	"dito/logging"
 	"dito/metrics"
 	cmid "dito/middlewares"
+	"dito/plugin"
 	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -21,8 +20,6 @@ import (
 	"runtime"
 	"syscall"
 	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
 // main is the entry point of the application.
@@ -47,20 +44,10 @@ func main() {
 	// Initialize metrics system
 	metrics.InitMetrics()
 
-	var redisClient *redis.Client
-	if config.GetCurrentProxyConfig().Redis.Enabled {
-		// Initialize the Redis client
-		var err error
-		redisClient, err = credis.InitRedis(logger, config.GetCurrentProxyConfig().Redis)
-		if err != nil {
-			log.Fatal("Failed to initialize Redis client: ", err)
-		}
-	}
-
 	transportConfig := &config.GetCurrentProxyConfig().Transport.HTTP
 
 	// Create a new Dito instance
-	dito := app.NewDito(redisClient, transportConfig, logger)
+	dito := app.NewDito(transportConfig, logger)
 
 	// Define a callback function to handle configuration changes
 	onChange := func(newConfig *config.ProxyConfig) {
@@ -92,11 +79,47 @@ func main() {
 //
 //	dito (*app.Dito): The Dito application instance containing configuration and logger.
 func StartServer(dito *app.Dito) {
+
+	plugins, pluginConfigs, err := plugin.LoadAndVerifyPlugins()
+	if err != nil {
+		// Use the logger from the Dito app instance if available, otherwise slog.Default()
+		var currentLogger *slog.Logger = slog.Default()
+		if dito != nil && dito.Logger != nil {
+			currentLogger = dito.Logger
+		}
+		currentLogger.Error("Error loading plugins", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	// Initialize each verified plugin manually
+	for _, p := range plugins {
+		dito.Logger.Info("Initializing plugin", slog.String("plugin_name", p.Name()))
+
+		// DEBUG: Check if the configuration is still present
+		pluginSpecificConfig, exists := pluginConfigs[p.Name()] // Renamed 'config' to avoid conflict
+		dito.Logger.Debug("Plugin configuration before Init",
+			slog.String("plugin_name", p.Name()),
+			slog.Any("config_data", pluginSpecificConfig))
+
+		if !exists {
+			pluginSpecificConfig = make(map[string]interface{}) // If not exists, pass an empty configuration
+			dito.Logger.Debug("Plugin configuration not found, using empty default.", slog.String("plugin_name", p.Name()))
+		}
+
+		// Initialize the plugin with its specific configuration
+		if err := p.Init(context.Background(), pluginSpecificConfig, dito); err != nil {
+			dito.Logger.Error("Failed to initialize plugin",
+				slog.String("plugin_name", p.Name()),
+				slog.Any("error", err))
+			os.Exit(1) // If a critical plugin fails, block startup
+		}
+	}
+
 	// Create a new HTTP request multiplexer (mux) to handle incoming requests.
 	mux := http.NewServeMux()
 
 	mux.Handle("/", cmid.LoggingMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handlers.DynamicProxyHandler(dito, w, r)
+		handlers.DynamicProxyHandler(dito, w, r, plugins)
 	}), dito))
 
 	// Create a custom HTTP server with the specified address and handler.
@@ -132,7 +155,7 @@ func StartServer(dito *app.Dito) {
 	}()
 
 	// Log server start message.
-	dito.Logger.Info(fmt.Sprintf("👉 Dito it's ready on port: %s", dito.Config.Port))
+	dito.Logger.Info("Dito is ready", slog.String("port", dito.Config.Port))
 
 	// Start the HTTP server.
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {

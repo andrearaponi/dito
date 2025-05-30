@@ -62,7 +62,10 @@ func GetLogger() *slog.Logger {
 }
 
 // LogRequestVerbose logs detailed information about the HTTP request and response for debugging purposes.
-func LogRequestVerbose(req *http.Request, body []byte, headers http.Header, statusCode int, duration time.Duration) {
+func LogRequestVerbose(logger *slog.Logger, req *http.Request, body []byte, headers http.Header, statusCode int, duration time.Duration) {
+	if logger == nil {
+		logger = GetLogger() // Fallback to global if nil, though tests should provide one.
+	}
 	var sb strings.Builder
 
 	// Start building the log message
@@ -91,13 +94,15 @@ func LogRequestVerbose(req *http.Request, body []byte, headers http.Header, stat
 
 	sb.WriteString(detailStyle("---------------------------------------"))
 
-	// Print the final log message
-	fmt.Println(sb.String())
+	// Log the formatted string through the logger at Debug level.
+	logger.Debug("Verbose request details", slog.String("formatted_output", sb.String()))
 }
 
-// LogRequestCompact logs the HTTP request and response in a compact format.
-func LogRequestCompact(r *http.Request, body []byte, headers http.Header, statusCode int, duration time.Duration) {
-	logger := GetLogger()
+// LogRequestCompact logs the HTTP request and response in a compact format using structured logging.
+func LogRequestCompact(logger *slog.Logger, r *http.Request, body []byte, headers http.Header, statusCode int, duration time.Duration) {
+	if logger == nil {
+		logger = GetLogger() // Fallback to global if nil.
+	}
 	clientIP := r.RemoteAddr
 	method := r.Method
 	url := r.URL.Path
@@ -105,74 +110,61 @@ func LogRequestCompact(r *http.Request, body []byte, headers http.Header, status
 	userAgent := r.Header.Get("User-Agent")
 	referer := r.Header.Get("Referer")
 
-	logger.Info(fmt.Sprintf("%s - \"%s %s %s\" %d \"%s\" \"%s\" %.6f seconds",
-		clientIP,
-		method,
-		url,
-		protocol,
-		statusCode,
-		referer,
-		userAgent,
-		duration.Seconds(),
-	))
+	logger.Info("HTTP request processed",
+		slog.String("client_ip", clientIP),
+		slog.String("method", method),
+		slog.String("url", url),
+		slog.String("protocol", protocol),
+		slog.Int("status_code", statusCode),
+		slog.String("referer", referer),
+		slog.String("user_agent", userAgent),
+		slog.Float64("duration_seconds", duration.Seconds()),
+	)
 }
 
-// LogWebSocketMessage logs the details of a WebSocket message.
-func LogWebSocketMessageOLD(messageType int, message []byte, err error, duration time.Duration) {
-	logger := GetLogger()
-	messageTypeStr := "Unknown"
-	switch messageType {
-	case websocket.TextMessage:
-		messageTypeStr = "Text"
-	case websocket.BinaryMessage:
-		messageTypeStr = "Binary"
-	case websocket.CloseMessage:
-		messageTypeStr = "Close"
-	case websocket.PingMessage:
-		messageTypeStr = "Ping"
-	case websocket.PongMessage:
-		messageTypeStr = "Pong"
+// LogWebSocketMessage logs the details of a WebSocket message using structured logging.
+func LogWebSocketMessage(logger *slog.Logger, messageType int, message []byte, err error, duration time.Duration) {
+	if logger == nil {
+		logger = GetLogger() // Fallback to global if nil.
 	}
-
-	if err != nil {
-		logger.Error(fmt.Sprintf("WebSocket %s Message Error: %v", messageTypeStr, err))
-	} else {
-		logger.Info(fmt.Sprintf("WebSocket %s Message: %s (%.6f seconds)", messageTypeStr, string(message), duration.Seconds()))
-	}
-}
-
-// LogWebSocketMessage logs the details of a WebSocket message.
-func LogWebSocketMessage(messageType int, message []byte, err error, duration time.Duration) {
-	logger := GetLogger()
 	messageTypeStr := getMessageTypeString(messageType)
 
-	// Dettagli da loggare
-	logDetails := map[string]interface{}{
-		"type":     messageTypeStr,
-		"duration": duration.Seconds(),
+	// Details to log
+	logAttributes := []slog.Attr{
+		slog.String("type", messageTypeStr),
+		slog.Float64("duration_seconds", duration.Seconds()),
 	}
 
-	// Log in caso di errore
+	// Log in case of error
 	if err != nil {
-		logDetails["error"] = err.Error()
-		logger.Error("WebSocket Message Error", slog.Any("details", logDetails))
+		logAttributes = append(logAttributes, slog.String("error", err.Error()))
+		logger.Error("WebSocket message processing error", attrsToAny(logAttributes)...)
 		return
 	}
 
-	// Logga il contenuto del messaggio in base al tipo
+	// Log message content based on type
 	switch messageType {
 	case websocket.TextMessage:
-		logDetails["message"] = truncateMessage(message)
-		logger.Info("WebSocket Text Message", slog.Any("details", logDetails))
+		logAttributes = append(logAttributes, slog.String("message_content", truncateMessage(message)))
+		logger.Info("WebSocket text message received", attrsToAny(logAttributes)...)
 	case websocket.PingMessage, websocket.PongMessage:
-		logger.Debug("WebSocket Ping/Pong Message", slog.Any("details", logDetails))
-	default:
-		logDetails["message_size"] = len(message)
-		logger.Info("WebSocket Message", slog.Any("details", logDetails))
+		logger.Debug("WebSocket ping/pong message received", attrsToAny(logAttributes)...)
+	default: // Includes BinaryMessage, CloseMessage, etc.
+		logAttributes = append(logAttributes, slog.Int("message_size_bytes", len(message)))
+		logger.Info("WebSocket message received", attrsToAny(logAttributes)...)
 	}
 }
 
-// Funzione di utilità per abbreviare messaggi molto lunghi
+// attrsToAny converts a slice of slog.Attr to a slice of any for slog methods.
+func attrsToAny(attrs []slog.Attr) []any {
+	anys := make([]any, len(attrs))
+	for i, attr := range attrs {
+		anys[i] = attr
+	}
+	return anys
+}
+
+// Utility function to truncate very long messages
 func truncateMessage(message []byte) string {
 	const maxLength = 100
 	if len(message) > maxLength {
@@ -181,7 +173,7 @@ func truncateMessage(message []byte) string {
 	return string(message)
 }
 
-// Funzione di utilità per ottenere la descrizione del tipo di messaggio
+// Utility function to get the message type description
 func getMessageTypeString(messageType int) string {
 	switch messageType {
 	case websocket.TextMessage:
@@ -200,7 +192,10 @@ func getMessageTypeString(messageType int) string {
 }
 
 // LogResponse logs the details of the HTTP response.
-func LogResponse(lrw *writer.ResponseWriter) {
+func LogResponse(logger *slog.Logger, lrw *writer.ResponseWriter) {
+	if logger == nil {
+		logger = GetLogger() // Fallback to global if nil.
+	}
 	var sb strings.Builder
 
 	sb.WriteString("\n")
@@ -220,6 +215,6 @@ func LogResponse(lrw *writer.ResponseWriter) {
 	sb.WriteString("\n")
 	sb.WriteString(detailStyle("--------------------------------------"))
 
-	// Print the final log message
-	fmt.Println(sb.String())
+	// Log the formatted string through the logger at Debug level.
+	logger.Debug("Verbose response details", slog.String("formatted_output", sb.String()))
 }

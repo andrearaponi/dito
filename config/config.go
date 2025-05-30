@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"io"
 	"log"
 	"log/slog"
@@ -11,15 +10,9 @@ import (
 	"regexp"
 	"sync/atomic"
 	"time"
-)
 
-// RedisConfig holds the configuration for connecting to a Redis server.
-type RedisConfig struct {
-	Enabled  bool   `yaml:"enabled"`  // Enables/disables Redis.
-	Host     string `yaml:"host"`     // Redis server host.
-	Port     string `yaml:"port"`     // Redis server port.
-	Password string `yaml:"password"` // Redis server password.
-}
+	"gopkg.in/yaml.v3"
+)
 
 // HTTPTransportConfig holds the configuration settings for the HTTP transport.
 //
@@ -65,10 +58,16 @@ type ProxyConfig struct {
 	Port      string           `yaml:"port"`       // Port the proxy will listen on.
 	HotReload bool             `yaml:"hot_reload"` // Enables/disables hot reloading.
 	Logging   Logging          `yaml:"logging"`    // Logging configuration.
-	Redis     RedisConfig      `yaml:"redis"`      // Redis configuration.
 	Metrics   MetricsConfig    `yaml:"metrics"`    // Metrics configuration.
 	Locations []LocationConfig `yaml:"locations"`  // List of configurations for each location.
 	Transport TransportConfig  `yaml:"transport"`  // Transport configuration.
+	Plugins   Plugins          `yaml:"plugins"`
+}
+
+type Plugins struct {
+	Directory     string `yaml:"directory" mapstructure:"directory"`
+	PublicKeyPath string `yaml:"public_key_path" mapstructure:"public_key_path"`
+	PublicKeyHash string `yaml:"public_key_hash" mapstructure:"public_key_hash"`
 }
 
 // RateLimiting holds the configuration for rate limiting.

@@ -43,9 +43,9 @@ func init() {
 // processLogEntry processes a log entry and logs it based on the configuration.
 func processLogEntry(entry logEntry) {
 	if entry.Dito.Config.Logging.Enabled && entry.Dito.Config.Logging.Verbose {
-		logging.LogRequestVerbose(entry.Request, entry.BodyBytes, entry.Headers, entry.StatusCode, entry.Duration)
+		logging.LogRequestVerbose(entry.Dito.Logger, entry.Request, entry.BodyBytes, entry.Headers, entry.StatusCode, entry.Duration)
 	} else {
-		logging.LogRequestCompact(entry.Request, entry.BodyBytes, entry.Headers, entry.StatusCode, entry.Duration)
+		logging.LogRequestCompact(entry.Dito.Logger, entry.Request, entry.BodyBytes, entry.Headers, entry.StatusCode, entry.Duration)
 	}
 }
 

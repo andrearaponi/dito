@@ -39,17 +39,17 @@ func (rw *ResponseWriter) Write(b []byte) (int, error) {
 		rw.StatusCode = http.StatusOK
 	}
 
-	// Write to the buffer and track the bytes being written.
-	n, err := rw.Body.Write(b)
-	rw.BytesWritten += n // Update the total bytes written
-
+	// Write to the buffer.
+	_, err := rw.Body.Write(b) // n from here is bytes written to buffer, not response
 	if err != nil {
-		return n, err
+		// Error writing to buffer, probably shouldn't proceed to write to response
+		return 0, err
 	}
 
 	// Write the same data to the actual ResponseWriter so that it is sent to the client.
-	n, err = rw.ResponseWriter.Write(b)
-	rw.BytesWritten += n // Update the total bytes written again if necessary
+	// This is the authoritative count of bytes written to the client.
+	n, err := rw.ResponseWriter.Write(b)
+	rw.BytesWritten += n // Update the total bytes written based on actual write to response
 
 	return n, err
 }

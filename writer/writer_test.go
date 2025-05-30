@@ -28,8 +28,8 @@ func TestResponseWriter(t *testing.T) {
 		t.Fatal("Failed to write to ResponseWriter:", err)
 	}
 
-	if rw.BytesWritten != len(testBody)*2 {
-		t.Errorf("Expected bytes written %d, got %d", len(testBody)*2, rw.BytesWritten)
+	if rw.BytesWritten != len(testBody) {
+		t.Errorf("Expected bytes written %d, got %d", len(testBody), rw.BytesWritten)
 	}
 
 	if rw.Body.String() != testBody {

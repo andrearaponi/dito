@@ -1,4 +1,3 @@
 .idea/
 /.scannerwork/
 /docker-compose.yml
-/cmd/config.yaml

@@ -1,207 +1,256 @@
+# Dito
 
+**Note:** The primary documentation for Dito will be migrated to an mdBook format. Please be patient 🙂
+
+---
 
 <div align="center">
-    <h1>Dito</h1>
-    <img src="https://img.shields.io/badge/status-active-green.svg">
-    <img src="https://img.shields.io/badge/release-0.6.0-green.svg">
-    <img src="https://img.shields.io/badge/license-Apache2-blue.svg">
-    <img src="https://img.shields.io/badge/language-Go-blue.svg">
-    <img src="dito.png" alt="Dito Logo" >
+  <h1>Dito</h1>
+  <p>
+    <img src="https://img.shields.io/badge/status-active-green.svg" alt="Status">
+    <img src="https://img.shields.io/badge/release-0.7.0-green.svg" alt="Release">
+    <img src="https://img.shields.io/badge/license-Apache2-blue.svg" alt="License">
+    <img src="https://img.shields.io/badge/language-Go-blue.svg" alt="Language">
+  </p>
+  <p>
+    <img src="dito.png" alt="Dito Logo">
+  </p>
 </div>
 
+Dito is an advanced, highly extensible reverse proxy server written in Go. It features a robust plugin-based architecture, custom certificate handling for backend connections, dynamic configuration reloading, and more. Plugins can manage their own dependencies and provide custom middleware functionality.
 
-**Dito** is an advanced reverse proxy server written in Go. It provides flexible middleware support, custom certificate handling for backend connections, dynamic configuration reloading, and distributed caching and rate limiting with Redis.
+## 🚀 Features
 
-## Features
+*   **Layer 7 Reverse Proxy:** Handles HTTP and HTTPS requests efficiently.
+*   **WebSockets Support:** Proxy WebSocket connections with ease.
+*   **Dynamic Configuration Reloading (hot reload):** Update configurations without restarting the server.
+*   **Extensible Plugin System:** Enhance Dito’s functionality with custom Go plugins that can:
+    *   Add authentication mechanisms
+    *   Implement caching strategies
+    *   Apply rate limiting
+    *   Transform requests/responses
+    *   Add custom logging
+    *   And much more!
+*   **Plugin Security:** Plugins are signed using Ed25519 keys, and Dito verifies these signatures at startup.
+*   **Custom TLS Certificate Management:** Support for mTLS and custom certificates for backend connections.
+*   **Header Manipulation:** Add or remove HTTP headers as needed.
+*   **Advanced Logging:** Asynchronous logging with customizable verbosity and performance optimizations.
+*   **Custom Transport Configuration:** Fine-tune HTTP transport settings per location or globally.
+*   **Prometheus Metrics:** Monitor performance and behavior with detailed metrics.
 
-- **Layer 7 Reverse Proxy**: Handles HTTP and HTTPS requests efficiently.
-- **WebSockets Support**: Proxy WebSocket connections with ease.
-- **Dynamic Configuration Reloading** (`hot reload`): Update configurations without restarting the server.
-- **Middleware Support**: Easily integrate custom middleware for authentication, rate limiting, caching, etc.
-- **Distributed Rate Limiting with Redis**: Control request rates across multiple instances.
-- **Distributed Caching with Redis**: Improve performance by caching responses.
-- **Custom TLS Certificate Management**: Support for mTLS and custom certificates for backend connections.
-- **Header Manipulation**: Add or remove HTTP headers as needed.
-- **Advanced Logging**: Asynchronous logging with customizable verbosity and performance optimizations.
-- **Custom Transport Configuration**: Fine-tune HTTP transport settings per location or globally.
-- **Prometheus Metrics**: Monitor performance and behavior with detailed metrics.
+## 📂 Project Structure
 
-## Project Structure
-
-- `cmd/`: Entry point for the application.
-- `app/`: Core application logic.
-- `client`: Redis client for caching and rate limiting.
-- `config/`: Configuration-related utilities (loading, hot-reload).
-- `handlers/`: Core handlers for request routing and reverse proxy logic.
-- `middlewares/`: Custom middleware implementations (e.g., authentication, caching, rate limiting).
-- `transport/`: HTTP transport customization (including TLS management).
-- `websockets/`: WebSockets support for proxying WebSocket connections."
-- `writer/`: Custom HTTP response writers for capturing status codes.
-- `logging/`: Utilities for logging requests and responses.
-- `metrics/`: Prometheus metrics collection and handling.
-
-## Installation
-
-Make sure you have Go installed (version 1.16 or later).
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/andrearaponi/dito.git
-   cd dito
-   ```
-
-2. Build the application:
-
-   ```bash
-   go build -o dito ./cmd
-   ```
-
-## Usage
-
-You can run Dito by simply executing the binary. By default, it looks for `config.yaml` in the current working directory.
-
-```bash
-./dito
+```
+dito/
+├── cmd/                   # Entry points (main application & plugin-signer)
+├── app/                   # Core application logic
+├── config/                # Configuration loader & hot-reload
+├── handlers/              # Request routing & proxy handlers
+├── middlewares/           # Built-in middlewares (plugins can add more)
+├── plugin/                # Plugin loading, signing, and verification
+├── plugins/               # Example and community plugins
+├── transport/             # HTTP transport customization
+├── websockets/            # WebSocket support
+├── writer/                # Custom response writers
+├── logging/               # Logging utilities
+└── metrics/               # Prometheus metrics collection
 ```
 
-### Command-Line Options
+## ⚙️ Installation
 
-- `-f <path/to/config.yaml>`: Specify a custom configuration file.
+Ensure you have Go (>= 1.21) and `make` installed.
 
-Example:
+### Quick Start (Recommended)
 
 ```bash
-./dito -f /path/to/custom-config.yaml
+# Clone repo
+git clone https://github.com/andrearaponi/dito.git && cd dito
+
+# One-command setup & start
+make quick-start
+```
+This will:
+1.  Build all binaries (Dito & plugin-signer)
+2.  Generate Ed25519 keys
+3.  Build & sign plugins
+4.  Update config with correct paths & hashes
+5.  Start the Dito server
+
+### Step-by-Step
+
+```bash
+# 1. Clone repo
+git clone https://github.com/andrearaponi/dito.git && cd dito
+
+# 2. Setup (build, keys, plugins, config)
+make setup
+
+# 3. Start server
+make run
 ```
 
-## Configuration
+### Makefile Commands
 
-The configuration is defined in a `yaml` file, which can be dynamically reloaded if the `hot_reload` option is enabled. Here’s an example of a basic configuration:
+| Category        | Command               | Description                                           |
+| :-------------- | :-------------------- | :---------------------------------------------------- |
+| 🚀 **Quick**    | `quick-start`         | Clean, setup everything and start (recommended)       |
+|                 | `setup`               | Full setup (build, keys, plugins, config)             |
+|                 | `run`                 | Start the Dito server                                 |
+| 🔨 **Build**    | `build`               | Build Dito binary only                                |
+|                 | `build-plugins`       | Build all plugins                                     |
+|                 | `build-plugin-signer` | Build plugin-signer tool                              |
+| 🔑 **Security** | `generate-keys`       | Generate Ed25519 key pair                             |
+|                 | `sign-plugins`        | Sign all plugins                                      |
+|                 | `update-config`       | Update config paths & key hashes                      |
+| 🔍 **Debug**    | `debug-config`        | Debug configuration issues                            |
+|                 | `help`                | Show all commands                                     |
+| 🧹 **Cleanup**  | `clean`               | Remove all build artifacts                            |
+|                 | `clean-plugins`       | Clean plugin binaries only                            |
+| 🧪 **Development**| `test`                | Run tests                                             |
+|                 | `vet`                 | Run go vet                                            |
+|                 | `fmt`                 | Format code                                           |
 
+### 🛠️ Manual Installation (Advanced)
+
+1.  **Build Dito:**
+    ```bash
+    go build -o bin/dito ./cmd/dito/main.go
+    ```
+    *(Note: Ensure the path to `main.go` is correct, e.g., `./cmd/dito/main.go` if `main.go` is in `cmd/dito/`)*
+
+2.  **Build plugin-signer:**
+    ```bash
+    cd cmd/plugin-signer && go build -o ../../bin/plugin-signer . && cd ../..
+    ```
+
+3.  **Generate keys:**
+    ```bash
+    ./bin/plugin-signer generate-keys
+    ```
+    *(This will create keys in the current directory, presumably `bin/` if run from there, or the project root. Move them to `bin/` if needed or specify paths)*
+
+4.  **Build plugins:**
+    ```bash
+    find plugins -mindepth 1 -maxdepth 1 -type d -exec sh -c 'cd "$1" && go build -buildmode=plugin -o "$(basename "$1").so"' sh {} \;
+    ```
+
+5.  **Sign plugins:**
+    ```bash
+    find plugins -name "*.so" -exec ./bin/plugin-signer sign {} \;
+    ```
+    *(Ensure `plugin-signer` can find the private keys; you might need to specify `-privateKey path/to/key`)*
+
+6.  **Update `config.yaml`** (ensure `public_key_path` & `public_key_hash` are correct).
+
+7.  **Run Dito:**
+    ```bash
+    ./bin/dito
+    ```
+
+## ⚙️ Usage
+
+Start with default config:
+```bash
+make run
+```
+
+Or directly:
+```bash
+./bin/dito -f /path/to/custom-config.yaml -enable-profiler
+```
+
+### Config File
+*   **Template:** `cmd/config.yaml` (or the correct path to your template)
+*   **Runtime:** `bin/config.yaml` (auto-updated by `make setup` or `make quick-start`)
+
+Key fields:
 ```yaml
-# Configuration for the proxy server.
-port: '8081' # The port on which the server will listen.
-hot_reload: true # Enable hot reloading of the configuration file.
-
-# Logging configuration.
-logging:
-   enabled: true # Enable or disable logging.
-   verbose: false # Enable or disable verbose logging.
-   level: "info" # Set the log level (e.g., debug, info, warn, error)
-
-# Metrics configuration.
+port: '8081'
+hot_reload: true
 metrics:
-   enabled: true # Enable or disable metrics.
-   path: "/metrics" # The path on which the metrics will be exposed.
-
-# Redis configuration.
-redis:
-   enabled: true # Enable or disable Redis caching.
-   host: "localhost"
-   port: "6379"
-   password: ""  # Leave empty if no password is required.
-  
-# Configuration for the HTTP transport settings.
+  enabled: true
+  path: "/metrics"
+logging:
+  enabled: true
+  verbose: false
+  level: "info"
+plugins:
+  directory: "./plugins" # Relative to where Dito is run, or absolute path
+  public_key_path: "./ed25519_public.key" # Relative to where Dito is run, or absolute path
+  public_key_hash: "<SHA256_HASH>" # The SHA256 hash of the public key
 transport:
   http:
-    idle_conn_timeout: 90s  # The maximum amount of time an idle (keep-alive) connection will remain idle before closing.
-    max_idle_conns: 1000  # The maximum number of idle (keep-alive) connections across all hosts.
-    max_idle_conns_per_host: 200  # The maximum number of idle (keep-alive) connections to keep per-host.
-    max_conns_per_host: 0  # The maximum number of connections per host. 0 means no limit.
-    tls_handshake_timeout: 2s  # The maximum amount of time allowed for the TLS handshake.
-    response_header_timeout: 2s  # The maximum amount of time to wait for a server's response headers after fully writing the request.
-    expect_continue_timeout: 500ms  # The maximum amount of time to wait for a server's first response headers after fully writing the request headers if the request has an "Expect: 100-continue" header.
-    disable_compression: false  # Whether to disable compression (gzip) for requests.
-    dial_timeout: 2s  # The maximum amount of time to wait for a dial to complete.
-    keep_alive: 30s  # The interval between keep-alive probes for an active network connection.
-    force_http2: true  # Whether to force the use of HTTP/2.
-
-# List of location configurations for proxying requests.
+    idle_conn_timeout: 90s
+    max_idle_conns: 1000
+    max_idle_conns_per_host: 200
+    max_conns_per_host: 0
+    tls_handshake_timeout: 2s
+    response_header_timeout: 2s
+    expect_continue_timeout: 500ms
+    disable_compression: false
+    dial_timeout: 2s
+    keep_alive: 30s
+    force_http2: true
 locations:
-   - path: "^/test-ws$" # Regex pattern to match the request path.
-     target_url: "wss://echo.websocket.org" # The target URL to which the request will be proxied.
-     enable_websocket: true # Enable WebSocket support for this location.
-     replace_path: true # Replace the matched path with the target URL. 
-     
-   - path: "^/dito$" # Regex pattern to match the request path.
-     target_url: https://httpbin.org/get # The target URL to which the request will be proxied.
-     replace_path: true # Replace the matched path with the target URL.
-     
-     # HTTP transport settings for this location. If not specified, the global settings will be used.
-     transport:
-       http:
-         idle_conn_timeout: 90s  # The maximum amount of time an idle (keep-alive) connection will remain idle before closing.
-         max_idle_conns: 1000  # The maximum number of idle (keep-alive) connections across all hosts.
-         max_idle_conns_per_host: 400  # The maximum number of idle (keep-alive) connections to keep per-host.
-         max_conns_per_host: 0  # The maximum number of connections per host. 0 means no limit.
-         tls_handshake_timeout: 2s  # The maximum amount of time allowed for the TLS handshake.
-         response_header_timeout: 2s  # The maximum amount of time to wait for a server's response headers after fully writing the request.
-         expect_continue_timeout: 1s  # The maximum amount of time to wait for a server's first response headers after fully writing the request headers if the request has an "Expect: 100-continue" header.
-         disable_compression: true  # Whether to disable compression (gzip) for requests.
-         dial_timeout: 2s  # The maximum amount of time to wait for a dial to complete.
-         keep_alive: 30s  # The interval between keep-alive probes for an active network connection.
-         force_http2: false  # Whether to force the use of HTTP/2.
-         cert_file: "" # Optional client certificate file for HTTPS connections.
-         key_file: "" # Optional client key file for HTTPS connections.
-         ca_file: "" # Optional CA certificate file for verifying server certificates.
-     
-     additional_headers:
-        # Additional headers to be added to the request.
-        il-molise: non esiste
-     excluded_headers:
-        - Cookie # Headers to be excluded from the request.
-     middlewares:
-        - rate-limiter-redis # List of middlewares to be applied.
-        - cache
-     rate_limiting:
-        enabled: true
-        requests_per_second: 2
-        burst: 4
-     cache:
-        enabled: true
-        ttl: 30
-    
+  - path: "^/test-ws$"
+    target_url: "wss://echo.websocket.org"
+    enable_websocket: true
+    replace_path: true
+
+  - path: "^/dito$"
+    target_url: "https://httpbin.org/get"
+    replace_path: true
+    transport:
+      http:
+        disable_compression: true
+    additional_headers:
+      X-Custom: "true"
+    excluded_headers:
+      - Cookie
+    middlewares:
+      - hello-plugin # Plugin name as defined in its directory
 ```
 
-## Middlewares
+## 🔌 Plugin System
 
-Dito supports custom middlewares, which can be specified in the configuration. Currently available middleware includes:
+Dito uses Go plugins (.so files). Each plugin must:
+1.  Be in its own subdirectory under `plugins/`.
+2.  Contain:
+    *   `<plugin-name>.so`
+    *   `<plugin-name>.so.sig` (signature file)
+    *   `config.yaml` (plugin-specific config, optional but common)
 
-- `auth`: Adds authentication logic.
-- `rate-limiter`: Limits the number of requests per IP using an in-memory approach.
-- `rate-limiter-redis`: Limits the number of requests per IP using Redis for distributed management.
-- `cache`: Caches responses using Redis, improving performance for idempotent responses (e.g., GET).
+### Signing & Verification
+*   **Mandatory:** Dito will not start without valid plugin signing.
+*   Uses Ed25519 digital signatures.
 
-### Middleware Execution Order
+Steps (if done manually):
+1.  **Generate key pair:**
+    ```bash
+    ./bin/plugin-signer generate-keys -privateKey ed25519_private.key -publicKey ed25519_public.key
+    ```
+    *(Save these keys securely, e.g., in `bin/` or a dedicated directory)*
 
-The order in which middlewares are applied is critical for ensuring proper functionality. For example:
+2.  **Compute public key hash:**
+    ```bash
+    shasum -a 256 ed25519_public.key | awk '{print $1}'
+    ```
+    *(Ensure the path to `ed25519_public.key` is correct)*
 
-- If the `rate-limiter` middleware is applied before `auth`, requests might be throttled before authentication is checked. This could lead to unauthorized requests consuming rate limit tokens.
-- Similarly, applying `cache` before `auth` could result in cached responses being served to unauthenticated users, which is not ideal for secure endpoints.
+3.  **Update Dito's `config.yaml`** with `public_key_path` (e.g., `./bin/ed25519_public.key`) and the computed `public_key_hash`.
 
-#### Example Middleware Order:
+4.  **Sign plugin:**
+    ```bash
+    ./bin/plugin-signer sign -plugin path/to/plugin.so -privateKey path/to/ed25519_private.key
+    ```
+    *(This will create a `.sig` file next to the plugin's `.so` file)*
 
-1. `rate-limiter-redis`: Throttles requests to protect the backend.
-2. `auth`: Ensures that only authenticated users can access the API.
-3. `cache`: Caches responses to reduce load on backends for repeated requests.
+## 🐛 Troubleshooting
 
-To implement a new middleware, place your logic in the `middlewares/` directory and reference it in the configuration.
+*   **`public key integrity validation failed`**: Regenerate hash and update config. Ensure the hash exactly matches the specified public key file.
+*   **`failed to read public key`**: Check public key file path in `config.yaml` & file permissions.
+*   **`plugin signature verification failed`**: Re-sign with correct private key. Ensure public key in `config.yaml` matches the private key used for signing.
 
-
-## Redis Integration
-
-### Rate Limiting
-
-Dito supports distributed rate limiting using Redis. The rate limiter can be configured per location with parameters like `requests_per_second` and `burst` to control the request flow.
-
-### Caching
-
-The `cache` middleware uses Redis to store responses. It helps in reducing load on backends by caching responses for a configurable `ttl` (time-to-live). The cache can be invalidated based on request headers or specific conditions.
-
-### Implementing a New Middleware
-
-To implement a new middleware, place your logic in the `middlewares/` directory and reference it in the configuration.
 
 ## Custom Transport Configuration
 
@@ -293,7 +342,15 @@ If you encounter any issues while using Dito, please follow these steps to open 
 3. **Configuration File**: Include the `config.yaml` file you are using.
    - This will help us understand the context in which the issue occurred and allow us to replicate the problem.
 
+## 👏 Contributing
+
+1.  Fork the repo.
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the branch (`git push origin feature/AmazingFeature`).
+5.  Open a Pull Request.
+
+
 ## License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](./LICENSE) file for details.
-

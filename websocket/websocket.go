@@ -2,11 +2,12 @@ package websocket
 
 import (
 	"dito/logging"
-	"github.com/gorilla/websocket"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 // HandleWebSocketProxy handles the proxying of WebSocket connections between a client and a target server.
@@ -86,14 +87,14 @@ func CopyWebSocketMessages(src, dest *websocket.Conn, logger *slog.Logger) error
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				logger.Error("Unexpected WebSocket closure", slog.Any("details", err))
 			}
-			logging.LogWebSocketMessage(messageType, message, err, time.Since(startTime))
+			logging.LogWebSocketMessage(logger, messageType, message, err, time.Since(startTime))
 			return err
 		}
-		logging.LogWebSocketMessage(messageType, message, nil, time.Since(startTime))
+		logging.LogWebSocketMessage(logger, messageType, message, nil, time.Since(startTime))
 
 		if err := dest.WriteMessage(messageType, message); err != nil {
 			logger.Error("Error writing message", slog.Any("details", err))
-			logging.LogWebSocketMessage(messageType, message, err, time.Since(startTime))
+			logging.LogWebSocketMessage(logger, messageType, message, err, time.Since(startTime))
 			return err
 		}
 	}
