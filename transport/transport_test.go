@@ -3,8 +3,9 @@ package transport_test
 import (
 	"dito/config"
 	"dito/transport"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func setupTestConfig() {

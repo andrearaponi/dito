@@ -4,7 +4,7 @@ import (
 	"dito/app"
 	"dito/config"
 	"dito/metrics"
-	cmid "dito/middlewares"
+	"dito/plugin"
 	"dito/transport"
 	"dito/websocket"
 	"dito/writer"
@@ -27,7 +27,7 @@ const (
 // - dito: The Dito application instance containing the configuration and logger.
 // - w: The HTTP response writer.
 // - r: The HTTP request.
-func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request) {
+func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request, plugins []plugin.Plugin) {
 
 	if isMetricsEndpoint(r.URL.Path, dito.Config.Metrics.Path) && dito.Config.Metrics.Enabled {
 		dito.Logger.Debug("Handling metrics endpoint")
@@ -50,7 +50,7 @@ func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request)
 
 			lrw := &writer.ResponseWriter{ResponseWriter: w}
 			if len(location.Middlewares) > 0 {
-				handlerWithMiddlewares := applyMiddlewares(dito, handler, location)
+				handlerWithMiddlewares := applyMiddlewares(dito, handler, location, plugins)
 				handlerWithMiddlewares.ServeHTTP(lrw, r)
 			} else {
 				handler.ServeHTTP(lrw, r)
@@ -124,30 +124,30 @@ func ServeProxy(dito *app.Dito, locationIndex int, lrw http.ResponseWriter, r *h
 //
 // Returns:
 // - http.Handler: The handler with the applied middlewares.
-func applyMiddlewares(dito *app.Dito, handler http.Handler, location config.LocationConfig) http.Handler {
+func applyMiddlewares(dito *app.Dito, handler http.Handler, location config.LocationConfig, plugins []plugin.Plugin) http.Handler {
 	for i := len(location.Middlewares) - 1; i >= 0; i-- {
-		middleware := location.Middlewares[i]
-		switch middleware {
-		case "auth":
-			dito.Logger.Debug("Applying Auth Middleware")
-			handler = cmid.AuthMiddleware(handler, dito.Logger)
-		case "rate-limiter":
-			if location.RateLimiting.Enabled {
-				dito.Logger.Debug("Applying Rate Limiter Middleware")
-				handler = cmid.RateLimiterMiddleware(handler, location.RateLimiting, dito.Logger)
-			}
-		case "rate-limiter-redis":
-			if location.RateLimiting.Enabled && dito.RedisClient != nil && dito.Config.Redis.Enabled {
-				dito.Logger.Debug("Applying Rate Limiter Middleware")
-				handler = cmid.RateLimiterMiddlewareWithRedis(handler, location.RateLimiting, dito.RedisClient, dito.Logger)
-			}
-		case "cache":
-			if dito.RedisClient != nil && dito.Config.Redis.Enabled && location.Cache.Enabled {
-				dito.Logger.Debug(fmt.Sprintf("Applying Cache Middleware with TTL: %d seconds", location.Cache.TTL))
-				handler = cmid.CacheMiddleware(handler, dito, location.Cache)
+		middlewareName := location.Middlewares[i]
+		middlewareApplied := false
+
+		// Controlla se un plugin fornisce il middleware richiesto
+		for _, p := range plugins {
+			if p.Name() == middlewareName {
+				middleware := p.MiddlewareFunc()
+				if middleware != nil {
+					dito.Logger.Debug(fmt.Sprintf("Applying Middleware from Plugin: %s", p.Name()))
+					handler = middleware(handler)
+					middlewareApplied = true
+					break
+				}
 			}
 		}
+
+		// Se il middleware non è stato trovato nei plugin, logghiamo un errore
+		if !middlewareApplied {
+			dito.Logger.Warn(fmt.Sprintf("Middleware '%s' not found in any plugin", middlewareName))
+		}
 	}
+
 	return handler
 }
 

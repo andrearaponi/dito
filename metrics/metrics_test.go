@@ -1,11 +1,12 @@
 package metrics
 
 import (
-	"github.com/prometheus/client_model/go"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	io_prometheus_client "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestMain initializes metrics and runs the tests.

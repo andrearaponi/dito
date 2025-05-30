@@ -1,0 +1,9 @@
+# Configuration for hello-plugin
+plugin_enabled: true
+
+# Custom greeting message
+greeting_message: "Hello from the amazing Dito plugin system!"
+
+# You can add any custom configuration your plugin needs
+log_level: "info"
+custom_header_name: "X-Greeting"

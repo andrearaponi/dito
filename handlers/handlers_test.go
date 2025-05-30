@@ -6,6 +6,7 @@ import (
 	"dito/config"
 	"dito/handlers"
 	"dito/logging"
+	"dito/plugin"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +34,7 @@ func setupTestConfig() *config.ProxyConfig {
 		},
 	}
 
-	// Compila le espressioni regolari per ogni location.
+	// Compile regular expressions for each location.
 	for i, location := range cfg.Locations {
 		regex, err := regexp.Compile(location.Path)
 		if err != nil {
@@ -48,16 +48,9 @@ func setupTestConfig() *config.ProxyConfig {
 
 // setupDito creates an instance of Dito for testing purposes.
 func setupDito() *app.Dito {
-	// Setup Redis client (mocked or real as needed).
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		DB:   0,
-	})
-
 	// Initialize the logger.
 	logger := logging.InitializeLogger("info")
 
-	// Create a new Dito instance.
 	// Create a sample HTTPTransportConfig.
 	httpTransportConfig := &config.HTTPTransportConfig{
 		IdleConnTimeout:       90 * time.Second,
@@ -76,7 +69,8 @@ func setupDito() *app.Dito {
 		CaFile:                "testdata/test_ca.pem",
 	}
 
-	dito := app.NewDito(redisClient, httpTransportConfig, logger)
+	// Create a new Dito instance.
+	dito := app.NewDito(httpTransportConfig, logger)
 	if dito == nil {
 		panic("Failed to initialize Dito instance")
 	}
@@ -100,8 +94,8 @@ func TestDynamicProxyHandler(t *testing.T) {
 	}
 	req.Body = io.NopCloser(bytes.NewBufferString("Test body"))
 
-	// Call the handler.
-	handlers.DynamicProxyHandler(dito, rr, req)
+	// Call the handler with an empty slice of plugins.
+	handlers.DynamicProxyHandler(dito, rr, req, []plugin.Plugin{})
 
 	// Check that the status code is what you expect.
 	assert.Equal(t, http.StatusOK, rr.Code)
