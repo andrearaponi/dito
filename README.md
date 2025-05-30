@@ -1,5 +1,3 @@
-# Dito
-
 **Note:** The primary documentation for Dito will be migrated to an mdBook format. Please be patient 🙂
 
 ---
