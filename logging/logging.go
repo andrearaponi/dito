@@ -25,6 +25,7 @@ var (
 	headersStyle      = color.New(color.FgHiWhite, color.BgHiMagenta).SprintFunc() // headersStyle formats HTTP headers.
 	statusStyle       = color.New(color.FgHiWhite, color.BgYellow).SprintFunc()    // statusStyle formats HTTP status codes.
 	responseTimeStyle = color.New(color.FgHiWhite, color.BgHiYellow).SprintFunc()  // responseTimeStyle formats response times.
+	warningStyle      = color.New(color.FgHiWhite, color.BgMagenta).SprintFunc()   // warningStyle formats warnings.
 )
 
 // InitializeLogger initializes a new logger with the specified log level.
@@ -191,17 +192,29 @@ func getMessageTypeString(messageType int) string {
 	}
 }
 
-// LogResponse logs the details of the HTTP response.
+// LogResponse logs the details of the HTTP response using the new ResponseWriter.
 func LogResponse(logger *slog.Logger, lrw *writer.ResponseWriter) {
 	if logger == nil {
-		logger = GetLogger() // Fallback to global if nil.
+		logger = GetLogger()
 	}
+
+	// Get response metrics
+	metrics := lrw.GetMetrics()
+
 	var sb strings.Builder
 
 	sb.WriteString("\n")
 	sb.WriteString(detailStyle("----------- Response Details ----------"))
 	sb.WriteString("\n\n")
-	sb.WriteString(fmt.Sprintf("%s: %d\n\n", responseTimeStyle("Status Code:"), lrw.StatusCode))
+	sb.WriteString(fmt.Sprintf("%s: %d\n\n", responseTimeStyle("Status Code:"), metrics.StatusCode))
+
+	// Add content type info
+	if metrics.ContentType != "" {
+		sb.WriteString(fmt.Sprintf("%s: %s\n\n", boldWhiteStyle("Content-Type:"), metrics.ContentType))
+	}
+
+	// Add bytes written info
+	sb.WriteString(fmt.Sprintf("%s: %d bytes\n\n", boldWhiteStyle("Total Bytes Written:"), metrics.BytesWritten))
 
 	sb.WriteString(headersStyle("Headers:"))
 	sb.WriteString("\n")
@@ -210,11 +223,55 @@ func LogResponse(logger *slog.Logger, lrw *writer.ResponseWriter) {
 			sb.WriteString(fmt.Sprintf("\t%s: %s\n", boldWhiteStyle(name), value))
 		}
 	}
+
+	// Handle body display based on buffering status
 	sb.WriteString("\n")
-	sb.WriteString(fmt.Sprintf("%s\t%s\n", responseTimeStyle("Body:"), lrw.Body.String()))
+	if metrics.IsStreaming {
+		sb.WriteString(fmt.Sprintf("%s: %s\n", responseTimeStyle("Body:"), "[STREAMING MODE - Body not buffered]"))
+		sb.WriteString(fmt.Sprintf("%s: First %d bytes buffered before streaming\n", boldWhiteStyle("Note:"), metrics.BufferedBytes))
+	} else if metrics.IsBufferTruncated {
+		bodyStr := lrw.GetBufferedBodyString()
+		sb.WriteString(fmt.Sprintf("%s:\n\t%s\n", responseTimeStyle("Body (Truncated):"), bodyStr))
+		sb.WriteString("\n")
+		sb.WriteString(fmt.Sprintf("%s: Response body was truncated. Buffered %d bytes out of %d total bytes.\n",
+			warningStyle("WARNING:"), metrics.BufferedBytes, metrics.BytesWritten))
+	} else {
+		bodyStr := lrw.GetBufferedBodyString()
+		if bodyStr == "" {
+			sb.WriteString(fmt.Sprintf("%s: [Empty]\n", responseTimeStyle("Body:")))
+		} else {
+			sb.WriteString(fmt.Sprintf("%s:\n\t%s\n", responseTimeStyle("Body:"), bodyStr))
+		}
+	}
+
 	sb.WriteString("\n")
 	sb.WriteString(detailStyle("--------------------------------------"))
 
 	// Log the formatted string through the logger at Debug level.
 	logger.Debug("Verbose response details", slog.String("formatted_output", sb.String()))
+}
+
+// LogResponseMetrics logs response metrics in a structured format
+func LogResponseMetrics(logger *slog.Logger, metrics writer.ResponseMetrics, path string) {
+	if logger == nil {
+		logger = GetLogger()
+	}
+
+	logAttrs := []any{
+		slog.String("path", path),
+		slog.Int("status_code", metrics.StatusCode),
+		slog.Int64("bytes_written", metrics.BytesWritten),
+		slog.String("content_type", metrics.ContentType),
+		slog.Bool("is_streaming", metrics.IsStreaming),
+		slog.Bool("is_truncated", metrics.IsBufferTruncated),
+		slog.Int("buffered_bytes", metrics.BufferedBytes),
+	}
+
+	if metrics.IsBufferTruncated {
+		logger.Warn("Response buffer truncated", logAttrs...)
+	} else if metrics.IsStreaming {
+		logger.Debug("Response streamed", logAttrs...)
+	} else {
+		logger.Debug("Response buffered", logAttrs...)
+	}
 }

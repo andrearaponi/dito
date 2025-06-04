@@ -48,7 +48,8 @@ func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request,
 				ServeProxy(dito, i, w, r)
 			})
 
-			lrw := &writer.ResponseWriter{ResponseWriter: w}
+			lrw := writer.NewResponseWriter(w)
+
 			if len(location.Middlewares) > 0 {
 				handlerWithMiddlewares := applyMiddlewares(dito, handler, location, plugins)
 				handlerWithMiddlewares.ServeHTTP(lrw, r)
