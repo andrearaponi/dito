@@ -20,6 +20,22 @@ const (
 	InternalServerErrorMessage = "Internal Server Error"
 )
 
+const (
+	XForwardedFor   = "X-Forwarded-For"
+	XForwardedProto = "X-Forwarded-Proto"
+	XForwardedHost  = "X-Forwarded-Host"
+)
+
+// contains checks if a header is in the list of excluded headers.
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
 // DynamicProxyHandler handles dynamic proxying of requests based on the configuration.
 // It reads the request body, matches the request path with configured locations, and applies middlewares.
 //
@@ -100,6 +116,41 @@ func ServeProxy(dito *app.Dito, locationIndex int, lrw http.ResponseWriter, r *h
 			req.URL.RawQuery = r.URL.RawQuery
 
 			req.Host = targetURL.Host
+
+			dito.Logger.Debug(fmt.Sprintf("Modifying headers for location: %s", location.Path))
+
+			for _, header := range location.ExcludedHeaders {
+				req.Header.Del(header)
+			}
+
+			for header, value := range location.AdditionalHeaders {
+				req.Header.Set(header, value)
+			}
+
+			if hostHeader, ok := location.AdditionalHeaders["Host"]; ok {
+				req.Host = hostHeader
+			}
+
+			if !contains(location.ExcludedHeaders, XForwardedFor) {
+				clientIP := req.RemoteAddr
+				if prior, ok := req.Header[XForwardedFor]; ok {
+					req.Header.Set(XForwardedFor, prior[0] + ", " + clientIP)
+				} else {
+					req.Header.Set(XForwardedFor, clientIP)
+				}
+			}
+
+			if !contains(location.ExcludedHeaders, XForwardedProto) {
+				scheme := "https"
+				if r.TLS == nil {
+					scheme = "http"
+				}
+				req.Header.Set(XForwardedProto, scheme)
+			}
+
+			if !contains(location.ExcludedHeaders, XForwardedHost) {
+				req.Header.Set(XForwardedHost, r.Host)
+			}
 		},
 		Transport: caronteTransport,
 		ErrorHandler: func(w http.ResponseWriter, req *http.Request, err error) {

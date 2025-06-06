@@ -14,12 +14,6 @@ import (
 	"sync"
 )
 
-const (
-	XForwardedFor   = "X-Forwarded-For"
-	XForwardedProto = "X-Forwarded-Proto"
-	XForwardedHost  = "X-Forwarded-Host"
-)
-
 // Caronte is a custom HTTP transport that handles header manipulation and certificate-based TLS.
 type Caronte struct {
 	Location       *config.LocationConfig
@@ -114,45 +108,7 @@ func (t *Caronte) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	t.AddHeaders(req)
-
 	return transport.RoundTrip(req)
-}
-
-// AddHeaders manipulates the request headers according to the LocationConfig.
-//
-// Parameters:
-// - req: The HTTP request whose headers will be manipulated.
-func (t *Caronte) AddHeaders(req *http.Request) {
-	//log.Printf("Adding headers for location: %s\n", t.Location.Path)
-	for _, header := range t.Location.ExcludedHeaders {
-		req.Header.Del(header)
-	}
-
-	for header, value := range t.Location.AdditionalHeaders {
-		req.Header.Set(header, value)
-	}
-
-	if hostHeader, ok := t.Location.AdditionalHeaders["Host"]; ok {
-		req.Host = hostHeader
-	}
-
-	if !contains(t.Location.ExcludedHeaders, XForwardedFor) {
-		clientIP := req.RemoteAddr
-		if prior, ok := req.Header[XForwardedFor]; ok {
-			req.Header.Set(XForwardedFor, prior[0]+", "+clientIP)
-		} else {
-			req.Header.Set(XForwardedFor, clientIP)
-		}
-	}
-
-	if !contains(t.Location.ExcludedHeaders, XForwardedProto) {
-		req.Header.Set(XForwardedProto, req.URL.Scheme)
-	}
-
-	if !contains(t.Location.ExcludedHeaders, XForwardedHost) {
-		req.Header.Set(XForwardedHost, req.Host)
-	}
 }
 
 // createTransportFromConfig creates an HTTP transport based on the provided configuration and SSL settings.
@@ -200,16 +156,6 @@ func createTransportFromConfig(config config.HTTPTransportConfig) (*http.Transpo
 			KeepAlive: config.KeepAlive,
 		}).DialContext,
 	}, nil
-}
-
-// contains checks if a header is in the list of excluded headers.
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
 }
 
 // generateTransportKey generates a unique key for the transport configuration.
