@@ -56,6 +56,8 @@ type MetricsConfig struct {
 // ProxyConfig holds the configuration for the proxy server.
 type ProxyConfig struct {
 	Port      string           `yaml:"port"`       // Port the proxy will listen on.
+	CertFile  string           `yaml:"cert_file"`  // Path to the proxy's certificate file.
+	KeyFile   string           `yaml:"key_file"`   // Path to the proxy's key file.
 	HotReload bool             `yaml:"hot_reload"` // Enables/disables hot reloading.
 	Logging   Logging          `yaml:"logging"`    // Logging configuration.
 	Metrics   MetricsConfig    `yaml:"metrics"`    // Metrics configuration.

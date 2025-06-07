@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"dito/app"
 	"dito/config"
 	"dito/handlers"
@@ -79,6 +80,7 @@ func main() {
 //
 //	dito (*app.Dito): The Dito application instance containing configuration and logger.
 func StartServer(dito *app.Dito) {
+	var err error
 
 	plugins, pluginConfigs, err := plugin.LoadAndVerifyPlugins()
 	if err != nil {
@@ -128,6 +130,20 @@ func StartServer(dito *app.Dito) {
 		Handler: mux,
 	}
 
+	if dito.Config.CertFile != "" && dito.Config.KeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(dito.Config.CertFile, dito.Config.KeyFile)
+		if err != nil {
+			dito.Logger.Error("Failed to load server key pair", "error", err)
+			os.Exit(1)
+		}
+
+		tlsConfig := &tls.Config{}
+		tlsConfig.Certificates = []tls.Certificate{cert}
+		tlsConfig.MinVersion = tls.VersionTLS12
+
+		server.TLSConfig = tlsConfig
+	}
+
 	// Channel to listen for OS interrupt signals (e.g., Ctrl+C).
 	idleConnsClosed := make(chan struct{})
 
@@ -158,7 +174,12 @@ func StartServer(dito *app.Dito) {
 	dito.Logger.Info("Dito is ready", slog.String("port", dito.Config.Port))
 
 	// Start the HTTP server.
-	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+	if server.TLSConfig != nil {
+		err = server.ListenAndServeTLS("", "")
+	} else {
+		err = server.ListenAndServe()
+	}
+	if !errors.Is(err, http.ErrServerClosed) {
 		dito.Logger.Error("Server failed to start", "error", err)
 		log.Fatal(err)
 	}
