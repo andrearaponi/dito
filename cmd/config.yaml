@@ -1,6 +1,7 @@
 # Configuration for the proxy server.
 port: "8081" # The port on which the server will listen.
 hot_reload: true # Enable hot reloading of the configuration file.
+request_timeout: 30s # Timeout for requests to the target server.
 
 # Logging configuration.
 logging:
@@ -12,6 +13,10 @@ logging:
 metrics:
   enabled: true # Enable or disable metrics.
   path: "/metrics" # The path on which the metrics will be exposed.
+
+# Global response limits configuration (for testing).
+response_limits:
+  max_response_body_size: 100000 # 100KB default limit
 
 plugins:
   directory: "./plugins"
@@ -49,6 +54,8 @@ locations:
     enable_websocket: true # Enable or disable WebSocket support.
     # The target URL to which the request will be proxied.
     replace_path: true # Replace the matched path with the target URL.
+    max_response_body_size: 52428800 # Maximum size of the response body in bytes (50 MB).
+    disable_response_buffering: false # Disable response buffering for this location.
 
     additional_headers:
       # Additional headers to be added to the request.
@@ -60,9 +67,14 @@ locations:
 
   - path: "^/todos/(?:[1-9]|10)$" # Regex pattern to match the request path.
     target_url: https://jsonplaceholder.typicode.com/ # The target URL to which the request will be proxied.
+    max_response_body_size: 90 # Medium limit - todos/1 passes (83 bytes), todos/2 fails (99 bytes)
     additional_headers:
       Host: jsonplaceholder.typicode.com # Additional headers to be added to the request.
     middlewares:
       #- hello-plugin
     excluded_headers:
       - Cookie # Headers to be excluded from the request.
+    
+  - path: "^/test-global-limit$" # Test endpoint to verify global limit usage
+    target_url: https://jsonplaceholder.typicode.com/posts/1 # Returns ~292 bytes (should fail with 100KB global limit is not the issue)
+    # No max_response_body_size specified - should use global limit of 100KB

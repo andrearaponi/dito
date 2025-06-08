@@ -18,80 +18,107 @@ func TestNewLimitedBuffer(t *testing.T) {
 	if lb.Len() != 0 {
 		t.Errorf("Expected initial length 0, got %d", lb.Len())
 	}
+	if lb.Available() != 1024 {
+		t.Errorf("Expected available space 1024, got %d", lb.Available())
+	}
+	if lb.IsOverflow() {
+		t.Error("Expected no overflow initially")
+	}
+	if lb.TotalSize() != 0 {
+		t.Errorf("Expected total size 0, got %d", lb.TotalSize())
+	}
 }
 
 func TestLimitedBuffer_Write(t *testing.T) {
 	tests := []struct {
-		name        string
-		maxSize     int
-		writes      [][]byte
-		wantErr     []bool
-		wantWritten []int
-		wantLen     int
+		name         string
+		maxSize      int
+		writes       [][]byte
+		wantErr      []bool
+		wantWritten  []int
+		wantLen      int
+		wantTotal    int64
+		wantOverflow bool
 	}{
 		{
-			name:        "write within limit",
-			maxSize:     10,
-			writes:      [][]byte{[]byte("hello")},
-			wantErr:     []bool{false},
-			wantWritten: []int{5},
-			wantLen:     5,
+			name:         "write within limit",
+			maxSize:      10,
+			writes:       [][]byte{[]byte("hello")},
+			wantErr:      []bool{false},
+			wantWritten:  []int{5},
+			wantLen:      5,
+			wantTotal:    5,
+			wantOverflow: false,
 		},
 		{
-			name:        "write exactly at limit",
-			maxSize:     10,
-			writes:      [][]byte{[]byte("helloworld")},
-			wantErr:     []bool{false},
-			wantWritten: []int{10},
-			wantLen:     10,
+			name:         "write exactly at limit",
+			maxSize:      10,
+			writes:       [][]byte{[]byte("helloworld")},
+			wantErr:      []bool{false},
+			wantWritten:  []int{10},
+			wantLen:      10,
+			wantTotal:    10,
+			wantOverflow: false,
 		},
 		{
-			name:        "write exceeds limit",
-			maxSize:     10,
-			writes:      [][]byte{[]byte("hello world!")},
-			wantErr:     []bool{true},
-			wantWritten: []int{10},
-			wantLen:     10,
+			name:         "write exceeds limit",
+			maxSize:      10,
+			writes:       [][]byte{[]byte("hello world!")},
+			wantErr:      []bool{true},
+			wantWritten:  []int{10},
+			wantLen:      10,
+			wantTotal:    12,
+			wantOverflow: true,
 		},
 		{
-			name:        "multiple writes within limit",
-			maxSize:     10,
-			writes:      [][]byte{[]byte("hello"), []byte("world")},
-			wantErr:     []bool{false, false},
-			wantWritten: []int{5, 5},
-			wantLen:     10,
+			name:         "multiple writes within limit",
+			maxSize:      10,
+			writes:       [][]byte{[]byte("hello"), []byte("world")},
+			wantErr:      []bool{false, false},
+			wantWritten:  []int{5, 5},
+			wantLen:      10,
+			wantTotal:    10,
+			wantOverflow: false,
 		},
 		{
-			name:        "multiple writes exceed limit",
-			maxSize:     10,
-			writes:      [][]byte{[]byte("hello"), []byte("world!")},
-			wantErr:     []bool{false, true},
-			wantWritten: []int{5, 5},
-			wantLen:     10,
+			name:         "multiple writes exceed limit",
+			maxSize:      10,
+			writes:       [][]byte{[]byte("hello"), []byte("world!")},
+			wantErr:      []bool{false, true},
+			wantWritten:  []int{5, 5},
+			wantLen:      10,
+			wantTotal:    11,
+			wantOverflow: true,
 		},
 		{
-			name:        "write to full buffer",
-			maxSize:     5,
-			writes:      [][]byte{[]byte("hello"), []byte("world")},
-			wantErr:     []bool{false, true},
-			wantWritten: []int{5, 0},
-			wantLen:     5,
+			name:         "write to full buffer",
+			maxSize:      5,
+			writes:       [][]byte{[]byte("hello"), []byte("world")},
+			wantErr:      []bool{false, true},
+			wantWritten:  []int{5, 0},
+			wantLen:      5,
+			wantTotal:    10,
+			wantOverflow: true,
 		},
 		{
-			name:        "empty write",
-			maxSize:     10,
-			writes:      [][]byte{[]byte("")},
-			wantErr:     []bool{false},
-			wantWritten: []int{0},
-			wantLen:     0,
+			name:         "empty write",
+			maxSize:      10,
+			writes:       [][]byte{[]byte("")},
+			wantErr:      []bool{false},
+			wantWritten:  []int{0},
+			wantLen:      0,
+			wantTotal:    0,
+			wantOverflow: false,
 		},
 		{
-			name:        "zero max size",
-			maxSize:     0,
-			writes:      [][]byte{[]byte("hello")},
-			wantErr:     []bool{true},
-			wantWritten: []int{0},
-			wantLen:     0,
+			name:         "zero max size",
+			maxSize:      0,
+			writes:       [][]byte{[]byte("hello")},
+			wantErr:      []bool{true},
+			wantWritten:  []int{0},
+			wantLen:      0,
+			wantTotal:    5,
+			wantOverflow: true,
 		},
 	}
 
@@ -118,7 +145,30 @@ func TestLimitedBuffer_Write(t *testing.T) {
 			if lb.Len() != tt.wantLen {
 				t.Errorf("Final length = %d, want %d", lb.Len(), tt.wantLen)
 			}
+
+			if lb.TotalSize() != tt.wantTotal {
+				t.Errorf("Total size = %d, want %d", lb.TotalSize(), tt.wantTotal)
+			}
+
+			if lb.IsOverflow() != tt.wantOverflow {
+				t.Errorf("IsOverflow = %v, want %v", lb.IsOverflow(), tt.wantOverflow)
+			}
 		})
+	}
+}
+
+func TestLimitedBuffer_WriteString(t *testing.T) {
+	lb := NewLimitedBuffer(10)
+
+	n, err := lb.WriteString("hello")
+	if err != nil {
+		t.Errorf("WriteString failed: %v", err)
+	}
+	if n != 5 {
+		t.Errorf("WriteString returned %d, want 5", n)
+	}
+	if lb.String() != "hello" {
+		t.Errorf("Buffer content = %q, want %q", lb.String(), "hello")
 	}
 }
 
@@ -177,29 +227,65 @@ func TestLimitedBuffer_Bytes(t *testing.T) {
 	}
 }
 
+func TestLimitedBuffer_Available(t *testing.T) {
+	lb := NewLimitedBuffer(10)
+
+	if lb.Available() != 10 {
+		t.Errorf("Initial available = %d, want 10", lb.Available())
+	}
+
+	lb.Write([]byte("hello"))
+	if lb.Available() != 5 {
+		t.Errorf("Available after 5 bytes = %d, want 5", lb.Available())
+	}
+
+	lb.Write([]byte("world"))
+	if lb.Available() != 0 {
+		t.Errorf("Available after 10 bytes = %d, want 0", lb.Available())
+	}
+}
+
 func TestLimitedBuffer_Reset(t *testing.T) {
 	lb := NewLimitedBuffer(100)
 
-	// Write some data
+	// Write some data and trigger overflow
 	_, err := lb.Write([]byte("hello world"))
 	if err != nil {
 		t.Fatalf("Failed to write: %v", err)
 	}
 
-	// Verify data is written
+	// Write more to trigger overflow
+	lb.Write([]byte(strings.Repeat("x", 200)))
+
+	// Verify data is written and overflow occurred
 	if lb.Len() == 0 {
 		t.Error("Buffer should not be empty after write")
+	}
+	if !lb.IsOverflow() {
+		t.Error("Buffer should have overflow")
+	}
+	if lb.TotalSize() == 0 {
+		t.Error("Total size should not be zero")
 	}
 
 	// Reset
 	lb.Reset()
 
-	// Verify buffer is empty
+	// Verify buffer is completely reset
 	if lb.Len() != 0 {
 		t.Errorf("Len() after reset = %d, want 0", lb.Len())
 	}
 	if lb.String() != "" {
 		t.Errorf("String() after reset = %q, want empty", lb.String())
+	}
+	if lb.IsOverflow() {
+		t.Error("IsOverflow() after reset should be false")
+	}
+	if lb.TotalSize() != 0 {
+		t.Errorf("TotalSize() after reset = %d, want 0", lb.TotalSize())
+	}
+	if lb.Available() != 100 {
+		t.Errorf("Available() after reset = %d, want 100", lb.Available())
 	}
 
 	// Verify we can write again after reset
@@ -241,6 +327,69 @@ func TestLimitedBuffer_WriteTo(t *testing.T) {
 	}
 }
 
+func TestLimitedBuffer_Truncate(t *testing.T) {
+	lb := NewLimitedBuffer(100)
+	testData := []byte("hello world")
+
+	lb.Write(testData)
+
+	// Truncate to 5 bytes
+	lb.Truncate(5)
+
+	if lb.Len() != 5 {
+		t.Errorf("Len after truncate = %d, want 5", lb.Len())
+	}
+	if lb.String() != "hello" {
+		t.Errorf("String after truncate = %q, want %q", lb.String(), "hello")
+	}
+
+	// Truncate with negative value
+	lb.Truncate(-1)
+	if lb.Len() != 0 {
+		t.Errorf("Len after negative truncate = %d, want 0", lb.Len())
+	}
+}
+
+func TestLimitedBuffer_Grow(t *testing.T) {
+	lb := NewLimitedBuffer(10)
+
+	// Grow within capacity
+	err := lb.Grow(5)
+	if err != nil {
+		t.Errorf("Grow within capacity failed: %v", err)
+	}
+
+	// Grow beyond capacity
+	err = lb.Grow(20)
+	if err != ErrBufferOverflow {
+		t.Errorf("Grow beyond capacity should return ErrBufferOverflow, got %v", err)
+	}
+}
+
+func TestLimitedBuffer_ReadFrom(t *testing.T) {
+	lb := NewLimitedBuffer(10)
+
+	// Read from a string reader
+	reader := strings.NewReader("hello world")
+	n, err := lb.ReadFrom(reader)
+
+	if err != ErrBufferFull {
+		t.Errorf("ReadFrom should return ErrBufferFull, got %v", err)
+	}
+	if n != 10 {
+		t.Errorf("ReadFrom returned %d, want 10", n)
+	}
+	if lb.String() != "hello worl" {
+		t.Errorf("Buffer content = %q, want %q", lb.String(), "hello worl")
+	}
+	if !lb.IsOverflow() {
+		t.Error("Buffer should be in overflow state")
+	}
+	if lb.TotalSize() != 11 { // "hello world" is 11 bytes
+		t.Errorf("Total size = %d, want 11", lb.TotalSize())
+	}
+}
+
 func TestLimitedBuffer_ConcurrentAccess(t *testing.T) {
 	lb := NewLimitedBuffer(1000)
 	var wg sync.WaitGroup
@@ -270,6 +419,9 @@ func TestLimitedBuffer_ConcurrentAccess(t *testing.T) {
 				_ = lb.String()
 				_ = lb.Bytes()
 				_ = lb.Len()
+				_ = lb.Available()
+				_ = lb.IsOverflow()
+				_ = lb.TotalSize()
 			}
 		}(i)
 	}
@@ -279,6 +431,9 @@ func TestLimitedBuffer_ConcurrentAccess(t *testing.T) {
 	// Verify final state is consistent
 	if lb.Len() > lb.Cap() {
 		t.Errorf("Buffer length %d exceeds capacity %d", lb.Len(), lb.Cap())
+	}
+	if lb.Available() < 0 {
+		t.Errorf("Available space cannot be negative: %d", lb.Available())
 	}
 }
 
@@ -311,6 +466,12 @@ func TestLimitedBuffer_PartialWrite(t *testing.T) {
 	if lb.Len() != 10 {
 		t.Errorf("Buffer length = %d, want 10", lb.Len())
 	}
+	if lb.TotalSize() != 13 {
+		t.Errorf("Total size = %d, want 13", lb.TotalSize())
+	}
+	if !lb.IsOverflow() {
+		t.Error("Buffer should be in overflow state")
+	}
 }
 
 func BenchmarkLimitedBuffer_Write(b *testing.B) {
@@ -338,4 +499,25 @@ func BenchmarkLimitedBuffer_ConcurrentWrite(b *testing.B) {
 			}
 		}
 	})
+}
+
+func BenchmarkLimitedBuffer_WithOverflow(b *testing.B) {
+	data := []byte("hello world")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		lb := NewLimitedBuffer(5) // Small buffer to trigger overflow
+		lb.Write(data)            // Will cause overflow
+	}
+}
+
+func BenchmarkLimitedBuffer_ReadFrom(b *testing.B) {
+	data := strings.Repeat("hello world ", 1000) // ~12KB
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		lb := NewLimitedBuffer(1024 * 1024) // 1MB buffer
+		reader := strings.NewReader(data)
+		lb.ReadFrom(reader)
+	}
 }

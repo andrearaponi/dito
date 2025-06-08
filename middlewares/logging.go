@@ -68,6 +68,17 @@ func processLogEntry(entry logEntry) {
 			"bytes", entry.ResponseMetrics.BytesWritten,
 		)
 	}
+
+	// Log response body size limit violations
+	if entry.ResponseMetrics.IsResponseLimitHit {
+		entry.Dito.Logger.Warn("Response body size limit exceeded",
+			"path", entry.Request.URL.Path,
+			"content_type", entry.ResponseMetrics.ContentType,
+			"limit_bytes", entry.ResponseMetrics.MaxResponseBodySize,
+			"attempted_bytes", entry.ResponseMetrics.BytesWritten,
+			"error", entry.ResponseMetrics.ResponseLimitError,
+		)
+	}
 }
 
 // LoggingMiddleware is an HTTP middleware that logs the details of each request and response.
@@ -96,8 +107,8 @@ func LoggingMiddleware(next http.Handler, dito *app.Dito) http.Handler {
 			r.Body = io.NopCloser(io.MultiReader(bytes.NewBuffer(bodyBytes), r.Body))
 		}
 
-		// Create the new ResponseWriter with appropriate options
-		lrw := createResponseWriter(w, r, dito)
+		// Create the new ResponseWriter with appropriate options including response size limits
+		lrw := createResponseWriterWithLimits(w, r, dito)
 
 		// Serve the request
 		next.ServeHTTP(lrw, r)
@@ -120,6 +131,9 @@ func LoggingMiddleware(next http.Handler, dito *app.Dito) http.Handler {
 			if responseMetrics.IsBufferTruncated {
 				// You could add a truncated_responses metric here
 			}
+			if responseMetrics.IsResponseLimitHit {
+				// You could add a response_limit_exceeded metric here
+			}
 		}
 
 		// Send log entry
@@ -140,13 +154,17 @@ func LoggingMiddleware(next http.Handler, dito *app.Dito) http.Handler {
 	})
 }
 
-// createResponseWriter creates a ResponseWriter with appropriate configuration based on the request
-func createResponseWriter(w http.ResponseWriter, r *http.Request, dito *app.Dito) *writer.ResponseWriter {
+// createResponseWriterWithLimits creates a ResponseWriter with appropriate configuration based on the request and response limits
+func createResponseWriterWithLimits(w http.ResponseWriter, r *http.Request, dito *app.Dito) *writer.ResponseWriter {
 	// Default options
 	opts := []writer.WriterOption{}
 
 	// Determine buffer size based on configuration or request type
 	bufferSize := writer.DefaultMaxBufferSize
+
+	// Disable response body size limit in the writer - we handle this in the handler interceptor
+	// which provides better error responses with proper JSON formatting
+	opts = append(opts, writer.WithMaxResponseBodySize(0)) // 0 = unlimited in writer
 
 	// You can customize buffer size based on path, headers, etc.
 	// For example, smaller buffer for health checks
@@ -177,6 +195,12 @@ func createResponseWriter(w http.ResponseWriter, r *http.Request, dito *app.Dito
 	}
 
 	return writer.NewResponseWriter(w, opts...)
+}
+
+// createResponseWriter creates a ResponseWriter with appropriate configuration based on the request
+// This is the old function name - keeping it for backward compatibility but it now delegates to the new function
+func createResponseWriter(w http.ResponseWriter, r *http.Request, dito *app.Dito) *writer.ResponseWriter {
+	return createResponseWriterWithLimits(w, r, dito)
 }
 
 // isFileDownloadPath checks if the path is likely a file download

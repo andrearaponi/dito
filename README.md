@@ -36,6 +36,8 @@ Dito is an advanced, highly extensible reverse proxy server written in Go. It fe
 *   **Header Manipulation:** Add or remove HTTP headers as needed.
 *   **Advanced Logging:** Asynchronous logging with customizable verbosity and performance optimizations.
 *   **Custom Transport Configuration:** Fine-tune HTTP transport settings per location or globally.
+*   **Response Body Size Limits:** Control maximum response body sizes globally and per location with proper error handling (413 status code).
+*   **Response Buffering Control:** Enable or disable response buffering per location for optimal performance.
 *   **Prometheus Metrics:** Monitor performance and behavior with detailed metrics.
 
 ## 📂 Project Structure
@@ -211,6 +213,76 @@ locations:
       - hello-plugin # Plugin name as defined in its directory
 ```
 
+## 📏 Response Limits Configuration
+
+Dito provides flexible response body size limits that can be configured both globally and per location to prevent memory issues and control resource usage.
+
+### Global Response Limits
+
+Set default limits for all locations in the main configuration:
+
+```yaml
+# Global response limits configuration
+response_limits:
+  max_response_body_size: 100000 # 100KB default limit for all locations
+```
+
+### Per-Location Response Limits
+
+Override global limits for specific locations with custom settings:
+
+```yaml
+locations:
+  - path: "^/api/small"
+    target_url: "https://api.example.com"
+    max_response_body_size: 1024 # 1KB limit for this specific endpoint
+    disable_response_buffering: false # Enable response buffering (default)
+    
+  - path: "^/api/large"
+    target_url: "https://api.example.com"
+    max_response_body_size: 52428800 # 50MB limit for large responses
+    disable_response_buffering: true # Disable buffering for streaming
+```
+
+### Response Limit Features
+
+- **Automatic Error Handling**: Returns proper `413 Request Entity Too Large` status code when limits are exceeded
+- **JSON Error Responses**: Provides structured error messages with limit details
+- **Early Detection**: Checks `Content-Length` header before processing to fail fast
+- **Streaming Support**: Works with both buffered and unbuffered responses
+- **Logging**: Comprehensive warning logs when limits are exceeded
+- **Zero Downtime**: Limits can be updated via hot reload without server restart
+
+### Error Response Format
+
+When a response exceeds the configured limit, Dito returns a standardized JSON error:
+
+```json
+{
+  "error": {
+    "code": 413,
+    "message": "Response body size exceeds limit",
+    "details": {
+      "limit_bytes": 90,
+      "path": "/api/endpoint"
+    }
+  }
+}
+```
+
+### Response Buffering Control
+
+The `disable_response_buffering` option controls how responses are handled:
+
+- **`false` (default)**: Responses are buffered in memory before sending to client
+  - Better for small responses
+  - Allows Content-Length to be set accurately
+  - Enables proper error handling when limits are exceeded
+  
+- **`true`**: Responses are streamed directly to client  
+  - Better for large responses or real-time data
+  - Lower memory usage
+  - Cannot recover if response exceeds limit mid-stream
 ## 🔌 Plugin System
 
 Dito uses Go plugins (.so files). Each plugin must:
