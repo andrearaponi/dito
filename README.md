@@ -6,7 +6,7 @@
   <h1>Dito</h1>
   <p>
     <img src="https://img.shields.io/badge/status-active-green.svg" alt="Status">
-    <img src="https://img.shields.io/badge/release-0.7.0-green.svg" alt="Release">
+    <img src="https://img.shields.io/badge/release-0.7.5-green.svg" alt="Release">
     <img src="https://img.shields.io/badge/license-Apache2-blue.svg" alt="License">
     <img src="https://img.shields.io/badge/language-Go-blue.svg" alt="Language">
   </p>
