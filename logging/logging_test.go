@@ -137,29 +137,93 @@ func TestLogRequestVerbose(t *testing.T) {
 }
 
 func TestLogResponse(t *testing.T) {
-	var buf bytes.Buffer
-	logger := newTestTextLogger(&buf, slog.LevelDebug)
+	t.Run("normal response", func(t *testing.T) {
+		var buf bytes.Buffer
+		logger := newTestTextLogger(&buf, slog.LevelDebug)
 
-	rr := httptest.NewRecorder()
-	// Create our custom ResponseWriter, writing to the httptest recorder
-	// so we can inspect what was written to the actual response.
-	// The LogResponse function will then read from this ResponseWriter's buffer.
-	customResponseWriter := &writer.ResponseWriter{ResponseWriter: rr, Body: *bytes.NewBufferString("response body content")}
-	customResponseWriter.WriteHeader(http.StatusAccepted) // 202
-	customResponseWriter.Header().Set("X-Resp-Header", "RespValue")
-	// Manually set BytesWritten as LogResponse doesn't call Write itself
-	customResponseWriter.BytesWritten = len("response body content")
+		rr := httptest.NewRecorder()
+		// Create ResponseWriter with the new implementation
+		customResponseWriter := writer.NewResponseWriter(rr)
+		customResponseWriter.WriteHeader(http.StatusAccepted) // 202
+		customResponseWriter.Header().Set("X-Resp-Header", "RespValue")
+		customResponseWriter.Header().Set("Content-Type", "application/json")
 
-	LogResponse(logger, customResponseWriter)
+		// Write some data
+		testBody := "response body content"
+		customResponseWriter.Write([]byte(testBody))
 
-	output := buf.String()
-	assert.Contains(t, output, "Verbose response details")
-	assert.Contains(t, output, "Status Code:")
-	assert.Contains(t, output, "202")
-	assert.Contains(t, output, "Headers:")
-	assert.Contains(t, output, "X-Resp-Header: RespValue")
-	assert.Contains(t, output, "Body:")
-	assert.Contains(t, output, "response body content")
+		LogResponse(logger, customResponseWriter)
+
+		output := buf.String()
+		assert.Contains(t, output, "Verbose response details")
+		assert.Contains(t, output, "Status Code:")
+		assert.Contains(t, output, "202")
+		assert.Contains(t, output, "Content-Type:")
+		assert.Contains(t, output, "application/json")
+		assert.Contains(t, output, "Total Bytes Written:")
+		assert.Contains(t, output, "21 bytes") // length of "response body content"
+		assert.Contains(t, output, "Headers:")
+		assert.Contains(t, output, "X-Resp-Header: RespValue")
+		assert.Contains(t, output, "Body:")
+		assert.Contains(t, output, "response body content")
+	})
+
+	t.Run("truncated response", func(t *testing.T) {
+		var buf bytes.Buffer
+		logger := newTestTextLogger(&buf, slog.LevelDebug)
+
+		rr := httptest.NewRecorder()
+		// Create ResponseWriter with small buffer
+		customResponseWriter := writer.NewResponseWriter(rr, writer.WithMaxBufferSize(10))
+		customResponseWriter.WriteHeader(http.StatusOK)
+
+		// Write more data than buffer can hold
+		customResponseWriter.Write([]byte("This is a very long response body that will be truncated"))
+
+		LogResponse(logger, customResponseWriter)
+
+		output := buf.String()
+		assert.Contains(t, output, "Body (Truncated):")
+		assert.Contains(t, output, "WARNING:")
+		assert.Contains(t, output, "Response body was truncated")
+		assert.Contains(t, output, "Buffered 10 bytes out of")
+	})
+
+	t.Run("streaming response", func(t *testing.T) {
+		var buf bytes.Buffer
+		logger := newTestTextLogger(&buf, slog.LevelDebug)
+
+		rr := httptest.NewRecorder()
+		customResponseWriter := writer.NewResponseWriter(rr)
+		customResponseWriter.WriteHeader(http.StatusOK)
+		customResponseWriter.Header().Set("Content-Type", "video/mp4")
+
+		// Write enough to trigger streaming mode
+		largeData := strings.Repeat("a", 600*1024) // 600KB
+		customResponseWriter.Write([]byte(largeData))
+
+		LogResponse(logger, customResponseWriter)
+
+		output := buf.String()
+		assert.Contains(t, output, "[STREAMING MODE - Body not buffered]")
+		assert.Contains(t, output, "First")
+		assert.Contains(t, output, "bytes buffered before streaming")
+	})
+
+	t.Run("empty response", func(t *testing.T) {
+		var buf bytes.Buffer
+		logger := newTestTextLogger(&buf, slog.LevelDebug)
+
+		rr := httptest.NewRecorder()
+		customResponseWriter := writer.NewResponseWriter(rr)
+		customResponseWriter.WriteHeader(http.StatusNoContent)
+
+		LogResponse(logger, customResponseWriter)
+
+		output := buf.String()
+		assert.Contains(t, output, "Body:")
+		assert.Contains(t, output, "[Empty]")
+	})
 }
 
 func TestLogRequestCompact(t *testing.T) {
@@ -344,4 +408,85 @@ func TestGetLogger(t *testing.T) {
 
 	// Test that it's a functional logger (e.g., Info level is enabled by default)
 	assert.True(t, logger1.Handler().Enabled(context.Background(), slog.LevelInfo), "Default logger does not have Info level enabled")
+}
+
+func TestLogResponseMetrics(t *testing.T) {
+	t.Run("normal response", func(t *testing.T) {
+		var buf bytes.Buffer
+		logger := newTestJSONLogger(&buf, slog.LevelDebug)
+
+		metrics := writer.ResponseMetrics{
+			StatusCode:        200,
+			BytesWritten:      1024,
+			BufferedBytes:     1024,
+			IsStreaming:       false,
+			IsBufferTruncated: false,
+			ContentType:       "application/json",
+		}
+
+		LogResponseMetrics(logger, metrics, "/api/test")
+
+		var logOutput map[string]interface{}
+		err := json.Unmarshal(buf.Bytes(), &logOutput)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "DEBUG", logOutput["level"])
+		assert.Equal(t, "Response buffered", logOutput["msg"])
+		assert.Equal(t, "/api/test", logOutput["path"])
+		assert.Equal(t, float64(200), logOutput["status_code"])
+		assert.Equal(t, float64(1024), logOutput["bytes_written"])
+		assert.Equal(t, "application/json", logOutput["content_type"])
+		assert.Equal(t, false, logOutput["is_streaming"])
+		assert.Equal(t, false, logOutput["is_truncated"])
+	})
+
+	t.Run("truncated response", func(t *testing.T) {
+		var buf bytes.Buffer
+		logger := newTestJSONLogger(&buf, slog.LevelWarn)
+
+		metrics := writer.ResponseMetrics{
+			StatusCode:        200,
+			BytesWritten:      2048,
+			BufferedBytes:     1024,
+			IsStreaming:       false,
+			IsBufferTruncated: true,
+			ContentType:       "text/html",
+		}
+
+		LogResponseMetrics(logger, metrics, "/large-page")
+
+		var logOutput map[string]interface{}
+		err := json.Unmarshal(buf.Bytes(), &logOutput)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "WARN", logOutput["level"])
+		assert.Equal(t, "Response buffer truncated", logOutput["msg"])
+		assert.Equal(t, true, logOutput["is_truncated"])
+		assert.Equal(t, float64(1024), logOutput["buffered_bytes"])
+	})
+
+	t.Run("streaming response", func(t *testing.T) {
+		var buf bytes.Buffer
+		logger := newTestJSONLogger(&buf, slog.LevelDebug)
+
+		metrics := writer.ResponseMetrics{
+			StatusCode:        200,
+			BytesWritten:      1048576, // 1MB
+			BufferedBytes:     524288,  // 512KB
+			IsStreaming:       true,
+			IsBufferTruncated: false,
+			ContentType:       "video/mp4",
+		}
+
+		LogResponseMetrics(logger, metrics, "/video/stream")
+
+		var logOutput map[string]interface{}
+		err := json.Unmarshal(buf.Bytes(), &logOutput)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "DEBUG", logOutput["level"])
+		assert.Equal(t, "Response streamed", logOutput["msg"])
+		assert.Equal(t, true, logOutput["is_streaming"])
+		assert.Equal(t, "video/mp4", logOutput["content_type"])
+	})
 }

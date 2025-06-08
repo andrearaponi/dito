@@ -20,6 +20,14 @@ const (
 	XForwardedHost  = "X-Forwarded-Host"
 )
 
+// Context keys for storing original request values
+type contextKey string
+
+const (
+	originalHostKey  contextKey = "original-host"
+	originalProtoKey contextKey = "original-proto"
+)
+
 // Caronte is a custom HTTP transport that handles header manipulation and certificate-based TLS.
 type Caronte struct {
 	Location       *config.LocationConfig
@@ -28,7 +36,7 @@ type Caronte struct {
 
 // TransportCache is a thread-safe cache for storing and retrieving custom HTTP transports.
 type TransportCache struct {
-	transports       sync.Map // Changed from map to sync.Map
+	transports       sync.Map
 	genericTransport *http.Transport
 }
 
@@ -61,7 +69,6 @@ func NewTransportCache(transportConfig config.HTTPTransportConfig) *TransportCac
 // - *http.Transport: The custom HTTP transport.
 // - error: An error if the custom transport could not be created.
 func (c *TransportCache) GetTransport(location *config.LocationConfig, genericTransportConfig config.HTTPTransportConfig) (*http.Transport, error) {
-	//log.Printf("Getting transport for location: %s\n", location.Path)
 	var transportConfig config.HTTPTransportConfig
 	if location.Transport != nil {
 		transportConfig = location.Transport.HTTP
@@ -108,7 +115,6 @@ func (c *TransportCache) Clear() {
 
 // RoundTrip executes a single HTTP transaction, manipulating headers and handling TLS certificates.
 func (t *Caronte) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Use the custom or generic transport based on location configuration
 	transport, err := t.TransportCache.GetTransport(t.Location, config.GetCurrentProxyConfig().Transport.HTTP)
 	if err != nil {
 		return nil, err
@@ -124,7 +130,6 @@ func (t *Caronte) RoundTrip(req *http.Request) (*http.Response, error) {
 // Parameters:
 // - req: The HTTP request whose headers will be manipulated.
 func (t *Caronte) AddHeaders(req *http.Request) {
-	//log.Printf("Adding headers for location: %s\n", t.Location.Path)
 	for _, header := range t.Location.ExcludedHeaders {
 		req.Header.Del(header)
 	}
@@ -147,11 +152,27 @@ func (t *Caronte) AddHeaders(req *http.Request) {
 	}
 
 	if !contains(t.Location.ExcludedHeaders, XForwardedProto) {
-		req.Header.Set(XForwardedProto, req.URL.Scheme)
+		originalProto := "http"
+		if val := req.Context().Value(originalProtoKey); val != nil {
+			originalProto = val.(string)
+		} else if existingProto := req.Header.Get(XForwardedProto); existingProto != "" {
+			originalProto = existingProto
+		} else if req.TLS != nil {
+			originalProto = "https"
+		}
+		req.Header.Set(XForwardedProto, originalProto)
 	}
 
 	if !contains(t.Location.ExcludedHeaders, XForwardedHost) {
-		req.Header.Set(XForwardedHost, req.Host)
+		originalHost := ""
+		if val := req.Context().Value(originalHostKey); val != nil {
+			originalHost = val.(string)
+		} else if existingHost := req.Header.Get(XForwardedHost); existingHost != "" {
+			originalHost = existingHost
+		} else {
+			originalHost = req.Host
+		}
+		req.Header.Set(XForwardedHost, originalHost)
 	}
 }
 
