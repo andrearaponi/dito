@@ -1,3 +1,17 @@
+# IDE
 .idea/
+.vscode/
+
+# Build artifacts
+bin/
+!bin/.gitkeep
+
+# Generated configs (only commit templates)
+configs/config-*.yaml
+!configs/templates/
+
+# SonarQube
 /.scannerwork/
+
+# Docker Compose (moved to deployments/docker/)
 /docker-compose.yml

@@ -1,5 +1,5 @@
-# GO_CMD: The command to run Go.
-# GO_BUILD: The command to build the Go project.
+# GO_CMD: The command to run Go# .PHONY: Declares phony targets that are not actual files.
+.PHONY: build setup setup-prod build-plugin-signer generate-keys generate-prod-keys sign-plugins-prod sonar test vet fmt clean run build-plugins clean-plugins sign-plugins update-config update-prod-config quick-start help debug-config# GO_BUILD: The command to build the Go project.
 # GO_TEST: The command to run Go tests.
 # GO_VET: The command to run Go vet.
 # GO_FMT: The command to format Go code.
@@ -30,11 +30,21 @@ SONAR_HOST_URL=http://localhost:9000
 SONAR_PROJECT_KEY=dito
 
 # .PHONY: Declares phony targets that are not actual files.
-.PHONY: build setup build-plugin-signer generate-keys sonar test vet fmt clean run build-plugins clean-plugins sign-plugins update-config quick-start help debug-config
+.PHONY: build setup setup-prod build-plugin-signer generate-keys generate-prod-keys sonar test vet fmt clean run build-plugins clean-plugins sign-plugins sign-plugins-prod update-config update-prod-config update-k8s-config quick-start help debug-config deploy-ocp deploy-ocp-dev clean-ocp status-ocp logs-ocp
 
-# setup: Complete setup - builds everything and generates keys if needed
+# setup: Complete setup for development - builds everything and generates keys if needed
 setup: build-plugin-signer generate-keys build build-plugins sign-plugins update-config
-	@echo "✅ Setup complete! You can now run: make run"
+	@echo "✅ Development setup complete! You can now run: make run"
+
+# setup-prod: Complete setup for production - uses persistent keys and creates production config
+setup-prod: build-plugin-signer generate-prod-keys build build-plugins sign-plugins-prod update-prod-config
+	@echo "✅ Production setup complete!"
+	@echo "📦 Production files ready:"
+	@echo "  - bin/$(BINARY_NAME) (application binary)"
+	@echo "  - bin/config-prod.yaml (production config)"
+	@echo "  - bin/ed25519_public_prod.key (production public key)"
+	@echo "  - bin/ed25519_private_prod.key (production private key)"
+	@echo "🚀 Ready for containerization with persistent keys!"
 
 # build: Compiles the Go project and copies the configuration file to the bin directory.
 build:
@@ -62,6 +72,20 @@ generate-keys: build-plugin-signer
 		echo "🔑 Keys already exist in bin/ directory, skipping generation"; \
 	fi
 
+# generate-prod-keys: Generates persistent Ed25519 key pair for production (only if they don't exist)
+generate-prod-keys: build-plugin-signer
+	@mkdir -p bin
+	@if [ ! -f bin/ed25519_public_prod.key ] || [ ! -f bin/ed25519_private_prod.key ]; then \
+		echo "🔑 Generating persistent Ed25519 key pair for production..."; \
+		cd bin && ../bin/$(PLUGIN_SIGNER_BINARY) generate-keys; \
+		mv ed25519_public.key ed25519_public_prod.key; \
+		mv ed25519_private.key ed25519_private_prod.key; \
+		echo "Keys generated successfully: ed25519_public_prod.key, ed25519_private_prod.key"; \
+		echo "✅ Production keys generated successfully in bin/ directory"; \
+	else \
+		echo "🔑 Production keys already exist in bin/ directory, keeping existing keys for consistency"; \
+	fi
+
 # Build all plugins dynamically
 build-plugins:
 	@echo "🔨 Building plugins..."
@@ -82,6 +106,17 @@ sign-plugins: generate-keys
 		fi \
 	done
 	@echo "✅ Plugins signed successfully"
+
+# sign-plugins-prod: Signs all plugins automatically with production keys
+sign-plugins-prod: generate-prod-keys
+	@echo "🔏 Signing plugins with production keys..."
+	@find plugins -name "*.so" -type f | while read plugin; do \
+		echo "Signing $$plugin with production key..."; \
+		cp bin/ed25519_private_prod.key ed25519_private.key; \
+		./bin/$(PLUGIN_SIGNER_BINARY) sign "$$plugin"; \
+		rm ed25519_private.key; \
+	done
+	@echo "✅ Plugins signed successfully with production keys"
 
 # update-config: Updates bin/config.yaml with the correct public key hash and paths
 update-config: generate-keys build
@@ -112,6 +147,54 @@ update-config: generate-keys build
 	echo "📋 After update:"; \
 	grep -A3 -B1 "plugins:" bin/config.yaml || echo "  (plugins section not found)"; \
 	echo "✅ bin/config.yaml updated successfully"
+
+# update-prod-config: Updates bin/config-prod.yaml with the correct public key hash and paths for production
+update-prod-config: generate-prod-keys build
+	@echo "🔧 Creating and updating bin/config-prod.yaml with production public key hash and paths..."
+	@if [ ! -f bin/ed25519_public_prod.key ]; then \
+		echo "❌ Production public key file not found: bin/ed25519_public_prod.key"; \
+		exit 1; \
+	fi
+	@# Copy the base config to production config
+	@cp bin/config.yaml bin/config-prod.yaml
+	@if command -v shasum >/dev/null 2>&1; then \
+		HASH=$$(shasum -a 256 bin/ed25519_public_prod.key | awk '{print $$1}'); \
+	elif command -v sha256sum >/dev/null 2>&1; then \
+		HASH=$$(sha256sum bin/ed25519_public_prod.key | awk '{print $$1}'); \
+	else \
+		echo "❌ Neither shasum nor sha256sum found. Please install one of them."; \
+		exit 1; \
+	fi; \
+	echo "📝 Production public key hash: $$HASH"; \
+	echo "🔧 Updating bin/config-prod.yaml..."; \
+	echo "📋 Before update:"; \
+	grep -A1 -B1 "public_key" bin/config-prod.yaml || echo "  (public_key lines not found)"; \
+	sed -i.bak 's|directory: "[^"]*"|directory: "./plugins"|' bin/config-prod.yaml; \
+	sed -i.bak 's|public_key_path: "[^"]*"|public_key_path: "./ed25519_public_prod.key"|' bin/config-prod.yaml; \
+	sed -i.bak 's|public_key_hash: "[^"]*"[^"]*|public_key_hash: "'$$HASH'"|' bin/config-prod.yaml; \
+	echo "📋 After update:"; \
+	grep -A3 -B1 "plugins:" bin/config-prod.yaml || echo "  (plugins section not found)"; \
+	echo "✅ bin/config-prod.yaml updated successfully"
+
+# update-k8s-config: Creates Kubernetes-specific config with correct paths
+update-k8s-config: generate-prod-keys
+	@echo "🔧 Creating Kubernetes configuration from template..."
+	@if [ ! -f bin/ed25519_public_prod.key ]; then \
+		echo "❌ Production public key file not found: bin/ed25519_public_prod.key"; \
+		exit 1; \
+	fi
+	@if command -v shasum >/dev/null 2>&1; then \
+		HASH=$$(shasum -a 256 bin/ed25519_public_prod.key | awk '{print $$1}'); \
+	elif command -v sha256sum >/dev/null 2>&1; then \
+		HASH=$$(sha256sum bin/ed25519_public_prod.key | awk '{print $$1}'); \
+	else \
+		echo "❌ Neither shasum nor sha256sum found. Please install one of them."; \
+		exit 1; \
+	fi; \
+	echo "📝 Production public key hash: $$HASH"; \
+	echo "🔧 Creating bin/config-prod-k8s.yaml from template..."; \
+	sed "s/PLACEHOLDER_HASH_TO_BE_REPLACED/$$HASH/" configs/templates/application.yaml > configs/config-prod-k8s.yaml; \
+	echo "✅ Kubernetes config created: configs/config-prod-k8s.yaml"
 
 # debug-config: Debug configuration issues
 debug-config:
@@ -198,7 +281,8 @@ help:
 	@echo ""
 	@echo "🚀 Quick Commands:"
 	@echo "  make quick-start     - Clean setup everything and start server"
-	@echo "  make setup           - Complete setup (build, keys, plugins)"
+	@echo "  make setup           - Complete development setup (build, keys, plugins)"
+	@echo "  make setup-prod      - Complete production setup (persistent keys, prod config)"
 	@echo "  make fix-config      - Fix bin/config.yaml with correct paths/hashes"
 	@echo ""
 	@echo "🔨 Build Commands:"
@@ -207,9 +291,13 @@ help:
 	@echo "  make build-plugin-signer - Build plugin signer tool"
 	@echo ""
 	@echo "🔑 Security Commands:"
-	@echo "  make generate-keys   - Generate Ed25519 key pair"
-	@echo "  make sign-plugins    - Sign all plugins"
-	@echo "  make update-config   - Update bin/config.yaml with correct paths/hashes"
+	@echo "  make generate-keys   - Generate Ed25519 key pair for development"
+	@echo "  make generate-prod-keys - Generate persistent Ed25519 key pair for production"
+	@echo "  make sign-plugins    - Sign all plugins with development keys"
+	@echo "  make sign-plugins-prod - Sign all plugins with production keys"
+	@echo "  make update-config   - Update bin/config.yaml with development key paths/hashes"
+	@echo "  make update-prod-config - Update bin/config-prod.yaml with production key paths/hashes"
+	@echo "  make update-k8s-config - Create bin/config-prod-k8s.yaml for Kubernetes deployment"
 	@echo ""
 	@echo "🎮 Runtime Commands:"
 	@echo "  make run             - Run Dito server"
@@ -227,6 +315,98 @@ help:
 	@echo "  make fmt             - Format code"
 	@echo "  make sonar           - Run SonarQube analysis"
 	@echo ""
+	@echo "🚀 OpenShift Deployment:"
+	@echo "  make deploy-ocp      - Complete OpenShift production deployment"
+	@echo "  make deploy-ocp-dev  - Quick development deployment"
+	@echo "  make status-ocp      - Check OpenShift deployment status"
+	@echo "  make logs-ocp        - View OpenShift deployment logs"
+	@echo "  make clean-ocp       - Clean up OpenShift resources"
+	@echo ""
 	@echo "❓ Help:"
 	@echo "  make help            - Show this help"
 	@echo ""
+
+# deploy-ocp: Complete OpenShift deployment with all components
+deploy-ocp: setup-prod update-k8s-config
+	@echo "🚀 Starting complete OpenShift deployment..."
+	@if ! command -v oc >/dev/null 2>&1; then \
+		echo "❌ OpenShift CLI (oc) not found. Please install it."; \
+		exit 1; \
+	fi
+	@if ! oc whoami >/dev/null 2>&1; then \
+		echo "❌ Not logged into OpenShift. Please run: oc login <cluster-url>"; \
+		exit 1; \
+	fi
+	@echo "📦 Building and pushing container image..."
+	@./docker-build.sh
+	@echo "🔧 Deploying with automated script..."
+	@./scripts/deploy-ocp.sh
+	@echo "✅ Complete OpenShift deployment finished!"
+
+# deploy-ocp-dev: Quick deployment for development/testing
+deploy-ocp-dev: setup
+	@echo "🔧 Starting development OpenShift deployment..."
+	@if ! command -v oc >/dev/null 2>&1; then \
+		echo "❌ OpenShift CLI (oc) not found. Please install it."; \
+		exit 1; \
+	fi
+	@if ! oc whoami >/dev/null 2>&1; then \
+		echo "❌ Not logged into OpenShift. Please run: oc login <cluster-url>"; \
+		exit 1; \
+	fi
+	@echo "📦 Building and pushing container image..."
+	@VERSION=dev ./docker-build.sh
+	@echo "🔧 Creating development resources..."
+	@NAMESPACE=$${NAMESPACE:-dito-dev} ./scripts/deploy-ocp.sh -v dev
+	@echo "✅ Development deployment completed!"
+
+# clean-ocp: Clean up OpenShift resources
+clean-ocp:
+	@echo "🧹 Cleaning up OpenShift resources..."
+	@if ! command -v oc >/dev/null 2>&1; then \
+		echo "❌ OpenShift CLI (oc) not found. Please install it."; \
+		exit 1; \
+	fi
+	@NAMESPACE=$${NAMESPACE:-dito}; \
+	echo "🗑️  Deleting resources from namespace: $$NAMESPACE"; \
+	oc delete all,configmap,secret,networkpolicy,hpa,pdb -l app=dito -n $$NAMESPACE 2>/dev/null || echo "No resources found"; \
+	echo "✅ OpenShift cleanup completed"
+
+# status-ocp: Check OpenShift deployment status
+status-ocp:
+	@echo "📊 Checking OpenShift deployment status..."
+	@if ! command -v oc >/dev/null 2>&1; then \
+		echo "❌ OpenShift CLI (oc) not found. Please install it."; \
+		exit 1; \
+	fi
+	@NAMESPACE=$${NAMESPACE:-dito}; \
+	echo "📍 Namespace: $$NAMESPACE"; \
+	echo ""; \
+	echo "🚀 Deployments:"; \
+	oc get deployment -l app=dito -n $$NAMESPACE 2>/dev/null || echo "No deployments found"; \
+	echo ""; \
+	echo "📦 Pods:"; \
+	oc get pods -l app=dito -n $$NAMESPACE 2>/dev/null || echo "No pods found"; \
+	echo ""; \
+	echo "🔗 Services:"; \
+	oc get svc -l app=dito -n $$NAMESPACE 2>/dev/null || echo "No services found"; \
+	echo ""; \
+	echo "🌐 Routes:"; \
+	oc get route -l app=dito -n $$NAMESPACE 2>/dev/null || echo "No routes found"; \
+	echo ""; \
+	echo "🔒 Secrets:"; \
+	oc get secret -l app=dito -n $$NAMESPACE 2>/dev/null || echo "No secrets found"; \
+	echo ""; \
+	echo "📋 ConfigMaps:"; \
+	oc get configmap -l app=dito -n $$NAMESPACE 2>/dev/null || echo "No configmaps found"
+
+# logs-ocp: View OpenShift deployment logs
+logs-ocp:
+	@echo "📋 Viewing OpenShift deployment logs..."
+	@if ! command -v oc >/dev/null 2>&1; then \
+		echo "❌ OpenShift CLI (oc) not found. Please install it."; \
+		exit 1; \
+	fi
+	@NAMESPACE=$${NAMESPACE:-dito}; \
+	echo "📍 Namespace: $$NAMESPACE"; \
+	oc logs -l app=dito -n $$NAMESPACE --tail=100 -f

@@ -48,6 +48,21 @@ dito/
 ├── handlers/              # Request routing & proxy handlers
 ├── middlewares/           # Built-in middlewares (plugins can add more)
 ├── plugin/                # Plugin loading, signing, and verification
+├── plugins/               # Plugin implementations
+├── transport/             # HTTP transport configuration
+├── websocket/             # WebSocket proxy support
+├── writer/                # Response writers and buffering
+├── metrics/               # Prometheus metrics
+├── logging/               # Structured logging
+├── deployments/           # Deployment configurations
+│   ├── kubernetes/        # Basic Kubernetes deployments
+│   ├── openshift/         # OpenShift production deployments
+│   └── docker/            # Docker Compose for development
+├── configs/               # Configuration files and templates
+│   └── templates/         # Configuration templates
+├── scripts/               # Deployment and utility scripts
+└── bin/                   # Built binaries and runtime files
+```
 ├── plugins/               # Example and community plugins
 ├── transport/             # HTTP transport customization
 ├── websockets/            # WebSocket support
@@ -91,24 +106,36 @@ make run
 
 ### Makefile Commands
 
-| Category        | Command               | Description                                           |
-| :-------------- | :-------------------- | :---------------------------------------------------- |
-| 🚀 **Quick**    | `quick-start`         | Clean, setup everything and start (recommended)       |
-|                 | `setup`               | Full setup (build, keys, plugins, config)             |
-|                 | `run`                 | Start the Dito server                                 |
-| 🔨 **Build**    | `build`               | Build Dito binary only                                |
-|                 | `build-plugins`       | Build all plugins                                     |
-|                 | `build-plugin-signer` | Build plugin-signer tool                              |
-| 🔑 **Security** | `generate-keys`       | Generate Ed25519 key pair                             |
-|                 | `sign-plugins`        | Sign all plugins                                      |
-|                 | `update-config`       | Update config paths & key hashes                      |
-| 🔍 **Debug**    | `debug-config`        | Debug configuration issues                            |
-|                 | `help`                | Show all commands                                     |
-| 🧹 **Cleanup**  | `clean`               | Remove all build artifacts                            |
-|                 | `clean-plugins`       | Clean plugin binaries only                            |
-| 🧪 **Development**| `test`                | Run tests                                             |
-|                 | `vet`                 | Run go vet                                            |
-|                 | `fmt`                 | Format code                                           |
+| Category           | Command               | Description                                           |
+| :----------------- | :-------------------- | :---------------------------------------------------- |
+| 🚀 **Quick**       | `quick-start`         | Clean, setup everything and start (recommended)       |
+|                    | `setup`               | Full development setup (build, keys, plugins, config) |
+|                    | `setup-prod`          | Full production setup (persistent keys, prod config)  |
+|                    | `run`                 | Start the Dito server                                 |
+|                    | `fix-config`          | Quick command to fix configuration after setup        |
+| 🔨 **Build**       | `build`               | Build Dito binary only                                |
+|                    | `build-plugins`       | Build all plugins                                     |
+|                    | `build-plugin-signer` | Build plugin-signer tool                              |
+| 🔑 **Security**    | `generate-keys`       | Generate Ed25519 key pair for development             |
+|                    | `generate-prod-keys`  | Generate persistent Ed25519 key pair for production   |
+|                    | `sign-plugins`        | Sign all plugins with development keys                |
+|                    | `sign-plugins-prod`   | Sign all plugins with production keys                 |
+|                    | `update-config`       | Update bin/config.yaml with development key paths/hashes |
+|                    | `update-prod-config`  | Update bin/config-prod.yaml with production key paths/hashes |
+|                    | `update-k8s-config`   | Create configs/config-prod-k8s.yaml for Kubernetes deployment |
+| 🚀 **OpenShift**   | `deploy-ocp`          | Complete OpenShift production deployment              |
+|                    | `deploy-ocp-dev`      | Quick development deployment to OpenShift             |
+|                    | `status-ocp`          | Check OpenShift deployment status                     |
+|                    | `logs-ocp`            | View OpenShift deployment logs                        |
+|                    | `clean-ocp`           | Clean up OpenShift resources                          |
+| 🔍 **Debug**       | `debug-config`        | Debug configuration issues                            |
+|                    | `help`                | Show all commands with detailed descriptions          |
+| 🧹 **Cleanup**     | `clean`               | Remove all build artifacts                            |
+|                    | `clean-plugins`       | Clean plugin binaries only                            |
+| 🧪 **Development** | `test`                | Run tests                                             |
+|                    | `vet`                 | Run go vet                                            |
+|                    | `fmt`                 | Format code                                           |
+|                    | `sonar`               | Run SonarQube analysis                                |
 
 ### 🛠️ Manual Installation (Advanced)
 
@@ -424,3 +451,109 @@ If you encounter any issues while using Dito, please follow these steps to open 
 ## License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](./LICENSE) file for details.
+
+## 🐳 Containerization & OpenShift Deployment
+
+Dito is fully containerized and optimized for OpenShift Container Platform (OCP) with enterprise-grade security and deployment practices.
+
+### Quick Deployment
+
+For a complete OpenShift deployment with automatic key management and configuration:
+
+```bash
+# Make the deployment script executable
+chmod +x scripts/deploy-ocp.sh
+
+# Deploy with defaults (namespace: dito, version: v2.0.0-production)
+./scripts/deploy-ocp.sh
+
+# Deploy to custom namespace with specific version
+./scripts/deploy-ocp.sh -n my-dito -v latest
+
+# Force key regeneration
+./scripts/deploy-ocp.sh -f
+
+# Only update configuration (no deployment)
+./scripts/deploy-ocp.sh -c
+
+# Only deploy (skip config/key generation)
+./scripts/deploy-ocp.sh -d
+```
+
+### Manual Deployment Steps
+
+#### 1. Build and Push Container Image
+
+```bash
+# Build for OpenShift with automatic registry login and push
+./docker-build.sh
+
+# Or with custom settings
+VERSION=v2.1.0 NAMESPACE=my-dito ./docker-build.sh
+```
+
+#### 2. Generate Production Keys
+
+```bash
+# Generate persistent production keys (only if they don't exist)
+make generate-prod-keys
+```
+
+#### 3. Create OpenShift Resources
+
+```bash
+# Create namespace
+oc new-project dito
+
+# Create Secret for keys
+oc create secret generic dito-keys \
+    --from-file=ed25519_public.key=bin/ed25519_public_prod.key \
+    --from-file=ed25519_private.key=bin/ed25519_private_prod.key
+
+# Create ConfigMap for application config
+# First, create Kubernetes-specific config from template
+HASH=$(shasum -a 256 bin/ed25519_public_prod.key | awk '{print $1}')
+sed "s/PLACEHOLDER_HASH_TO_BE_REPLACED/$HASH/" configs/templates/application.yaml > configs/config-prod-k8s.yaml
+
+oc create configmap dito-config \
+    --from-file=config.yaml=configs/config-prod-k8s.yaml
+```
+
+#### 4. Deploy Application
+
+```bash
+# Deploy the application
+oc apply -f deployments/openshift/production-deployment.yaml
+```
+
+### Deployment Models
+
+| File | Use Case | Features |
+|------|----------|----------|
+| `deployments/kubernetes/basic-deployment.yaml` | Basic deployment | Simple setup, minimal security |
+| `deployments/openshift/production-deployment.yaml` | Production deployment | Plugin signing, proper secrets, health checks |
+
+### Security Features
+
+#### Container Security
+- **Non-root execution**: Runs as user ID 1001
+- **Read-only root filesystem**: Prevents runtime modifications
+- **Dropped capabilities**: Minimal privilege model
+- **Security contexts**: OpenShift security context constraints
+
+#### Key Management
+- **External key generation**: Keys never stored in container images
+- **Runtime plugin signing**: Plugins signed during pod initialization
+- **Secure secret mounting**: Keys mounted as Kubernetes Secrets
+- **Proper file permissions**: Keys accessible only to application user
+
+### Configuration Management
+
+Dito supports multiple configuration approaches:
+
+1. **Template-based**: Use `configs/templates/application.yaml` with hash substitution
+2. **Environment-specific**: Separate configs for dev/prod/staging in `configs/`
+3. **ConfigMap injection**: Runtime configuration via Kubernetes ConfigMaps
+4. **Hot-reload**: Dynamic configuration updates without restarts
+
+See `configs/README.md` for detailed configuration management.

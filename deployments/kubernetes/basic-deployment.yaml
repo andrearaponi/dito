@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dito
+  labels:
+    app: dito
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dito
+  template:
+    metadata:
+      labels:
+        app: dito
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: dito
+        image: image-registry.openshift-image-registry.svc:5000/dito/dito:v1.1.0-production
+        ports:
+        - containerPort: 8081
+        env:
+        - name: PORT
+          value: "8081"
+        args:
+        - "-f"
+        - "/app/config/config.yaml"
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: dito-config
+          mountPath: /app/config
+          readOnly: true
+        - name: dito-keys
+          mountPath: /app/keys
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+      volumes:
+      - name: dito-config
+        configMap:
+          name: dito-config
+      - name: dito-keys
+        secret:
+          secretName: dito-keys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dito
+  labels:
+    app: dito
+spec:
+  selector:
+    app: dito
+  ports:
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+    name: http
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: dito
+  labels:
+    app: dito
+spec:
+  to:
+    kind: Service
+    name: dito
+  port:
+    targetPort: http

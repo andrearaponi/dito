@@ -1,0 +1,59 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts (will be rebuilt in container)
+bin/
+*.so
+*.sig
+
+# Logs
+logs/
+*.log
+
+# Test files
+*_test.go
+test/
+testdata/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Keys (will be generated in container)
+ed25519_*
+*.key
+*.pem
+*.crt
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Kubernetes manifests (not needed in image)
+deployments/
+configs/
