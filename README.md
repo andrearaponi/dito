@@ -62,7 +62,6 @@ dito/
 │   └── templates/         # Configuration templates
 ├── scripts/               # Deployment and utility scripts
 └── bin/                   # Built binaries and runtime files
-```
 ├── plugins/               # Example and community plugins
 ├── transport/             # HTTP transport customization
 ├── websockets/            # WebSocket support
@@ -106,36 +105,36 @@ make run
 
 ### Makefile Commands
 
-| Category           | Command               | Description                                           |
-| :----------------- | :-------------------- | :---------------------------------------------------- |
-| 🚀 **Quick**       | `quick-start`         | Clean, setup everything and start (recommended)       |
-|                    | `setup`               | Full development setup (build, keys, plugins, config) |
-|                    | `setup-prod`          | Full production setup (persistent keys, prod config)  |
-|                    | `run`                 | Start the Dito server                                 |
-|                    | `fix-config`          | Quick command to fix configuration after setup        |
-| 🔨 **Build**       | `build`               | Build Dito binary only                                |
-|                    | `build-plugins`       | Build all plugins                                     |
-|                    | `build-plugin-signer` | Build plugin-signer tool                              |
-| 🔑 **Security**    | `generate-keys`       | Generate Ed25519 key pair for development             |
-|                    | `generate-prod-keys`  | Generate persistent Ed25519 key pair for production   |
-|                    | `sign-plugins`        | Sign all plugins with development keys                |
-|                    | `sign-plugins-prod`   | Sign all plugins with production keys                 |
-|                    | `update-config`       | Update bin/config.yaml with development key paths/hashes |
-|                    | `update-prod-config`  | Update bin/config-prod.yaml with production key paths/hashes |
-|                    | `update-k8s-config`   | Create configs/config-prod-k8s.yaml for Kubernetes deployment |
-| 🚀 **OpenShift**   | `deploy-ocp`          | Complete OpenShift production deployment              |
-|                    | `deploy-ocp-dev`      | Quick development deployment to OpenShift             |
-|                    | `status-ocp`          | Check OpenShift deployment status                     |
-|                    | `logs-ocp`            | View OpenShift deployment logs                        |
-|                    | `clean-ocp`           | Clean up OpenShift resources                          |
-| 🔍 **Debug**       | `debug-config`        | Debug configuration issues                            |
-|                    | `help`                | Show all commands with detailed descriptions          |
-| 🧹 **Cleanup**     | `clean`               | Remove all build artifacts                            |
-|                    | `clean-plugins`       | Clean plugin binaries only                            |
-| 🧪 **Development** | `test`                | Run tests                                             |
-|                    | `vet`                 | Run go vet                                            |
-|                    | `fmt`                 | Format code                                           |
-|                    | `sonar`               | Run SonarQube analysis                                |
+| Category | Command | Description |
+|----------|---------|-------------|
+| 🚀 **Quick** | `quick-start` | Clean, setup everything and start (recommended) |
+| | `setup` | Full development setup (build, keys, plugins, config) |
+| | `setup-prod` | Full production setup (persistent keys, prod config) |
+| | `run` | Start the Dito server |
+| | `fix-config` | Quick command to fix configuration after setup |
+| 🔨 **Build** | `build` | Build Dito binary only |
+| | `build-plugins` | Build all plugins |
+| | `build-plugin-signer` | Build plugin-signer tool |
+| 🔑 **Security** | `generate-keys` | Generate Ed25519 key pair for development |
+| | `generate-prod-keys` | Generate persistent Ed25519 key pair for production |
+| | `sign-plugins` | Sign all plugins with development keys |
+| | `sign-plugins-prod` | Sign all plugins with production keys |
+| | `update-config` | Update bin/config.yaml with development key paths/hashes |
+| | `update-prod-config` | Update bin/config-prod.yaml with production key paths/hashes |
+| | `update-k8s-config` | Create configs/config-prod-k8s.yaml for Kubernetes deployment |
+| 🚀 **OpenShift** | `deploy-ocp` | Complete OpenShift production deployment |
+| | `deploy-ocp-dev` | Quick development deployment to OpenShift |
+| | `status-ocp` | Check OpenShift deployment status |
+| | `logs-ocp` | View OpenShift deployment logs |
+| | `clean-ocp` | Clean up OpenShift resources |
+| 🔍 **Debug** | `debug-config` | Debug configuration issues |
+| | `help` | Show all commands with detailed descriptions |
+| 🧹 **Cleanup** | `clean` | Remove all build artifacts |
+| | `clean-plugins` | Clean plugin binaries only |
+| 🧪 **Development** | `test` | Run tests |
+| | `vet` | Run go vet |
+| | `fmt` | Format code |
+| | `sonar` | Run SonarQube analysis |
 
 ### 🛠️ Manual Installation (Advanced)
 
@@ -447,11 +446,6 @@ If you encounter any issues while using Dito, please follow these steps to open 
 4.  Push to the branch (`git push origin feature/AmazingFeature`).
 5.  Open a Pull Request.
 
-
-## License
-
-This project is licensed under the Apache License 2.0. See the [LICENSE](./LICENSE) file for details.
-
 ## 🐳 Containerization & OpenShift Deployment
 
 Dito is fully containerized and optimized for OpenShift Container Platform (OCP) with enterprise-grade security and deployment practices.
@@ -557,3 +551,11 @@ Dito supports multiple configuration approaches:
 4. **Hot-reload**: Dynamic configuration updates without restarts
 
 See `configs/README.md` for detailed configuration management.
+
+## 📄 License
+
+This project is licensed under the Apache License 2.0. See the [LICENSE](./LICENSE) file for details.
+
+---
+
+**Made with ❤️**
