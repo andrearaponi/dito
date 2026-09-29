@@ -1,5 +1,16 @@
 # Multi-stage build for Dito - OpenShift compatible (AMD64)
-FROM --platform=linux/amd64 registry.access.redhat.com/ubi8/go-toolset:1.23 AS builder
+#
+# Red Hat does not ship a Go 1.27 go-toolset yet, so the latest UBI 8 go-toolset
+# is only used as a bootstrap: GOTOOLCHAIN makes the go command download the
+# official go1.27.1 toolchain (verified against sum.golang.org). The builder stays
+# on UBI 8 so that the CGO-enabled binaries (required by Go plugins) link against
+# the same glibc as the ubi8-minimal runtime image.
+# Host binary and plugins MUST be built with the exact same toolchain.
+FROM --platform=linux/amd64 registry.access.redhat.com/ubi8/go-toolset:1.26 AS builder
+
+ENV GOTOOLCHAIN=go1.27.1 \
+    GOPROXY=https://proxy.golang.org,direct \
+    GOSUMDB=sum.golang.org
 
 # Install build dependencies
 USER 0

@@ -72,7 +72,7 @@ dito/
 
 ## ⚙️ Installation
 
-Ensure you have Go (>= 1.21) and `make` installed.
+Ensure you have Go (>= 1.27.1) and `make` installed. Plugins must be built with exactly the same Go toolchain as the Dito binary.
 
 ### Quick Start (Recommended)
 
