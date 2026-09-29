@@ -1,0 +1,4 @@
+# Transient Walden staging artifacts — never commit these.
+# Evidence documents (evidence/*.json) are deliberately NOT excluded:
+# they are shared repository state, reviewed like the specs they prove.
+.walden-doc-*
