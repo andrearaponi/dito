@@ -14,10 +14,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -58,9 +60,9 @@ var (
 // errorResponse represents a standardized error response structure
 type errorResponse struct {
 	Error struct {
-		Code    int                    `json:"code"`
-		Message string                 `json:"message"`
-		Details map[string]interface{} `json:"details,omitempty"`
+		Code    int            `json:"code"`
+		Message string         `json:"message"`
+		Details map[string]any `json:"details,omitempty"`
 	} `json:"error"`
 	RequestID string `json:"request_id,omitempty"`
 	Timestamp int64  `json:"timestamp"`
@@ -291,7 +293,7 @@ func createErrorHandler(dito *app.Dito) func(http.ResponseWriter, *http.Request,
 			message = "Request Timeout"
 		}
 
-		sendError(w, req, status, message, map[string]interface{}{
+		sendError(w, req, status, message, map[string]any{
 			"upstream_error": err.Error(),
 		})
 	}
@@ -344,8 +346,7 @@ func applyMiddlewares(dito *app.Dito, handler http.Handler, location config.Loca
 	var missingCritical []string
 
 	// Apply middlewares in reverse order (last configured is innermost)
-	for i := len(location.Middlewares) - 1; i >= 0; i-- {
-		middlewareName := location.Middlewares[i]
+	for _, middlewareName := range slices.Backward(location.Middlewares) {
 		applied := false
 
 		// Search for middleware in loaded plugins
@@ -385,7 +386,7 @@ func applyMiddlewares(dito *app.Dito, handler http.Handler, location config.Loca
 // - http.HandlerFunc: Handler that returns an error response.
 func createBlockingHandler(missingMiddlewares []string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		sendError(w, r, http.StatusInternalServerError, "Service configuration error", map[string]interface{}{
+		sendError(w, r, http.StatusInternalServerError, "Service configuration error", map[string]any{
 			"missing_components": missingMiddlewares,
 		})
 	}
@@ -438,9 +439,7 @@ func (rli *responseLimitInterceptor) WriteHeader(statusCode int) {
 	}
 
 	// Store original headers
-	for k, v := range rli.Header() {
-		rli.originalHeaders[k] = v
-	}
+	maps.Copy(rli.originalHeaders, rli.Header())
 
 	rli.statusCode = statusCode
 
@@ -466,9 +465,7 @@ func (rli *responseLimitInterceptor) Write(b []byte) (int, error) {
 	// If this is the first write, store headers and check content-length
 	if !rli.headerWritten {
 		// Store original headers
-		for k, v := range rli.Header() {
-			rli.originalHeaders[k] = v
-		}
+		maps.Copy(rli.originalHeaders, rli.Header())
 
 		// Check Content-Length header against limit before writing anything
 		if rli.checkContentLength() {
@@ -546,9 +543,7 @@ func (rli *responseLimitInterceptor) flushBuffer() {
 	rli.headerWritten = true
 
 	// Restore original headers to the underlying response writer
-	for k, v := range rli.originalHeaders {
-		rli.ResponseWriter.Header()[k] = v
-	}
+	maps.Copy(rli.ResponseWriter.Header(), rli.originalHeaders)
 
 	// If we have buffered content, set proper Content-Length to avoid chunking
 	if rli.buffer.Len() > 0 {
@@ -746,7 +741,7 @@ func sanitizeHeaders(req *http.Request) {
 // - code: The HTTP status code.
 // - message: The error message.
 // - details: Additional error details.
-func sendError(w http.ResponseWriter, r *http.Request, code int, message string, details map[string]interface{}) {
+func sendError(w http.ResponseWriter, r *http.Request, code int, message string, details map[string]any) {
 	// Create error response
 	resp := errorResponse{
 		Timestamp: time.Now().Unix(),
@@ -885,7 +880,7 @@ func generateRequestID() string {
 
 // randPool provides a pool of random number generators for performance.
 var randPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		v := time.Now().UnixNano()
 		return &v
 	},
@@ -920,7 +915,7 @@ type bufferWrapper struct {
 func newBufferPool() httputil.BufferPool {
 	return &bufferPool{
 		pool: sync.Pool{
-			New: func() interface{} {
+			New: func() any {
 				return &bufferWrapper{data: make([]byte, 32*1024)}
 			},
 		},

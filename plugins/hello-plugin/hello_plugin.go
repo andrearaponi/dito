@@ -10,7 +10,7 @@ import (
 // HelloPlugin is our simple plugin implementation
 type HelloPlugin struct {
 	logger *slog.Logger
-	config map[string]interface{}
+	config map[string]any
 }
 
 // NewPlugin is the required function that Dito calls to create a plugin instance
@@ -25,7 +25,7 @@ func (p *HelloPlugin) Name() string {
 }
 
 // Init initializes the plugin with configuration and app accessor
-func (p *HelloPlugin) Init(ctx context.Context, config map[string]interface{}, appAccessor plugin.AppAccessor) error {
+func (p *HelloPlugin) Init(ctx context.Context, config map[string]any, appAccessor plugin.AppAccessor) error {
 	p.logger = appAccessor.GetLogger()
 	p.config = config
 

@@ -397,11 +397,11 @@ func TestLimitedBuffer_ConcurrentAccess(t *testing.T) {
 	writesPerGoroutine := 10
 
 	// Start multiple writers
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < writesPerGoroutine; j++ {
+			for range writesPerGoroutine {
 				data := []byte(strings.Repeat("a", 5))
 				lb.Write(data)
 			}
@@ -409,12 +409,12 @@ func TestLimitedBuffer_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Start multiple readers
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
 			buf := make([]byte, 10)
-			for j := 0; j < writesPerGoroutine; j++ {
+			for range writesPerGoroutine {
 				lb.Read(buf)
 				_ = lb.String()
 				_ = lb.Bytes()

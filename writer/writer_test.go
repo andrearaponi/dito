@@ -365,7 +365,7 @@ func TestStreamingMode(t *testing.T) {
 
 	// Write small chunks that fit in buffer
 	smallData := strings.Repeat("a", 100*1024) // 100KB
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		rw.Write([]byte(smallData))
 		if rw.IsStreaming() {
 			t.Errorf("Should not be in streaming mode after %d KB", (i+1)*100)
@@ -534,7 +534,7 @@ func TestConcurrentWrites(t *testing.T) {
 
 	// Concurrent writes should be safe
 	done := make(chan bool, 10)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		go func(id int) {
 			data := strings.Repeat(string(rune('a'+id)), 100)
 			rw.Write([]byte(data))
@@ -543,7 +543,7 @@ func TestConcurrentWrites(t *testing.T) {
 	}
 
 	// Wait for all goroutines
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		<-done
 	}
 
@@ -604,7 +604,7 @@ func BenchmarkResponseWriter(b *testing.B) {
 			rw.WriteHeader(http.StatusOK)
 
 			// Write 10 chunks
-			for j := 0; j < 10; j++ {
+			for range 10 {
 				rw.Write(chunk)
 			}
 		}

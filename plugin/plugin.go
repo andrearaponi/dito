@@ -28,7 +28,7 @@ type Plugin interface {
 	// Name returns the unique name of the plugin.
 	Name() string
 	// Init initializes the plugin with a given context, configuration, and AppAccessor.
-	Init(ctx context.Context, config map[string]interface{}, appAccessor AppAccessor) error
+	Init(ctx context.Context, config map[string]any, appAccessor AppAccessor) error
 	// MiddlewareFunc returns the middleware function if applicable.
 	MiddlewareFunc() func(http.Handler) http.Handler
 }
@@ -74,8 +74,8 @@ func verifyPluginSignature(pluginPath string, publicKey ed25519.PublicKey) error
 }
 
 // loadPluginConfig loads the configuration file for a specific plugin.
-func loadPluginConfig(configPath string) (map[string]interface{}, error) {
-	pluginCfg := make(map[string]interface{}) // Renamed to avoid conflict with 'config' package
+func loadPluginConfig(configPath string) (map[string]any, error) {
+	pluginCfg := make(map[string]any) // Renamed to avoid conflict with 'config' package
 
 	// Check if the configuration file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
@@ -106,7 +106,7 @@ func loadPluginConfig(configPath string) (map[string]interface{}, error) {
 }
 
 // LoadPlugin loads a plugin dynamically from a given path after verifying its signature.
-func LoadPlugin(pluginDir, pluginName string, publicKey ed25519.PublicKey) (Plugin, map[string]interface{}, error) {
+func LoadPlugin(pluginDir, pluginName string, publicKey ed25519.PublicKey) (Plugin, map[string]any, error) {
 	pluginPath := filepath.Join(pluginDir, pluginName, pluginName+".so")
 	configPath := filepath.Join(pluginDir, pluginName, "config.yaml")
 
@@ -144,7 +144,7 @@ func LoadPlugin(pluginDir, pluginName string, publicKey ed25519.PublicKey) (Plug
 }
 
 // LoadAndVerifyPlugins scans the plugin directory, verifies signatures, and loads plugins dynamically.
-func LoadAndVerifyPlugins() ([]Plugin, map[string]map[string]interface{}, error) {
+func LoadAndVerifyPlugins() ([]Plugin, map[string]map[string]any, error) {
 	cfg := config.GetCurrentProxyConfig()
 	pluginDir := cfg.Plugins.Directory
 	publicKeyPath := cfg.Plugins.PublicKeyPath
@@ -165,7 +165,7 @@ func LoadAndVerifyPlugins() ([]Plugin, map[string]map[string]interface{}, error)
 	publicKey := ed25519.PublicKey(publicKeyData)
 
 	var plugins []Plugin
-	pluginConfigs := make(map[string]map[string]interface{})
+	pluginConfigs := make(map[string]map[string]any)
 
 	// Iterate over directories inside the plugin directory
 	entries, err := os.ReadDir(pluginDir)

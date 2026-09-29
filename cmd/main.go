@@ -102,7 +102,7 @@ func StartServer(dito *app.Dito) {
 			slog.Any("config_data", pluginSpecificConfig))
 
 		if !exists {
-			pluginSpecificConfig = make(map[string]interface{}) // If not exists, pass an empty configuration
+			pluginSpecificConfig = make(map[string]any) // If not exists, pass an empty configuration
 			dito.Logger.Debug("Plugin configuration not found, using empty default.", slog.String("plugin_name", p.Name()))
 		}
 

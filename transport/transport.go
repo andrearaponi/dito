@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices"
 	"sync"
 )
 
@@ -107,7 +108,7 @@ func (c *TransportCache) InvalidateTransport(transportConfig config.HTTPTranspor
 
 // Clear removes all transports from the cache.
 func (c *TransportCache) Clear() {
-	c.transports.Range(func(key, value interface{}) bool {
+	c.transports.Range(func(key, value any) bool {
 		c.transports.Delete(key)
 		return true
 	})
@@ -225,12 +226,7 @@ func createTransportFromConfig(config config.HTTPTransportConfig) (*http.Transpo
 
 // contains checks if a header is in the list of excluded headers.
 func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, item)
 }
 
 // generateTransportKey generates a unique key for the transport configuration.
