@@ -8,9 +8,9 @@
 | Data | 2026-09-29 |
 | Stato | Bozza v1, da revisionare |
 | Owner | Andrea Raponi |
-| Baseline analizzata | `main` @ `3c6c63f` (2025-06-19) + branch `chore/go-1.27` (upgrade Go, non ancora committato) |
+| Baseline analizzata | `main` @ `3c6c63f` (2025-06-19) + branch `chore/go-1.27` (`bd9325c` upgrade, `5838408` `go fix`) |
 | Toolchain di riferimento | Go 1.27.1 |
-| Riferimenti di riga | relativi al branch `chore/go-1.27`, dopo `go fix` |
+| Riferimenti di riga | relativi al commit `5838408` (branch `chore/go-1.27`, dopo `go fix`) |
 | Destinazione | backlog → spec Walden in `.walden/specs/<feature>/` |
 
 ## Indice
@@ -68,7 +68,7 @@
 
 - Dito è un reverse proxy L7 in Go (≈3.900 righe di produzione, ≈2.300 di test) con plugin firmati, hot reload, metriche Prometheus e WebSocket. Ultimo commit su `main`: 19/06/2025.
 - **Baseline aggiornata** a Go **1.27.1** con dipendenze aggiornate e immagine verificata: vulnerabilità note raggiungibili **31 → 0** (§5).
-- **49 finding**: 4 🔴, 13 🟠, 23 🟡, 9 🔵. Tutti i 🔴 sono stati riprodotti.
+- **50 finding** (49 dal deep dive, 1 emerso durante S-01): 4 🔴, 13 🟠, 23 🟡, 10 🔵. Tutti i 🔴 sono stati riprodotti.
 - I 4 critici:
   - risposte troncate senza errore (F-01);
   - POST di form rotti (F-02);
@@ -177,7 +177,7 @@ golangci-lint 2.14.0, con in più gosec, bodyclose, errorlint, noctx, modernize,
 
 ## 5. Lavoro già fatto: baseline Go 1.27.1
 
-Branch `chore/go-1.27`, **non committato**. Rotta Walden: manutenzione che preserva il contratto, quindi nessuna spec. Va committato prima di `walden repo init` (§11).
+Branch `chore/go-1.27`, **committato** il 29/09/2026: `bd9325c` (toolchain, dipendenze, Dockerfile, README) e `5838408` (`go fix`). Entrambi i commit sono stati verificati singolarmente (build, vet, test). Rotta Walden: manutenzione che preserva il contratto, quindi nessuna spec.
 
 | Area | Modifica |
 |---|---|
@@ -198,7 +198,7 @@ Branch `chore/go-1.27`, **non committato**. Rotta Walden: manutenzione che prese
 
 **Da fare**
 
-- Committare in due passi: toolchain e dipendenze, poi le modifiche di `go fix`.
+- ~~Committare in due passi: toolchain e dipendenze, poi le modifiche di `go fix`.~~ Fatto.
 - Aggiornare la toolchain locale: il GOENV ha `GOTOOLCHAIN=local` e il Go installato è 1.24.0.
 - In CI e Sonar usare strumenti compilati con Go ≥ 1.27: un golangci-lint compilato con Go 1.25 rifiuta un modulo 1.27.
 
@@ -265,6 +265,8 @@ Branch `chore/go-1.27`, **non committato**. Rotta Walden: manutenzione che prese
 | F-48 | 🔵 | Red Hat go-toolset in ritardo (massimo 1.26.7): build via `GOTOOLCHAIN`; FIPS da valutare | OSS | `Dockerfile` | S-10 |
 | **H. Strategia** | | | | | |
 | F-49 | 🟠 | Plugin basati sul package `plugin` di Go: CGO, stessa toolchain, dipendenze e flag tra host e plugin, niente unload né isolamento | OSS | `plugin/plugin.go`; `plugins/` | S-14 |
+| **I. Emersi durante le spec** | | | | | |
+| F-50 | 🔵 | `LimitedBuffer.Len()` e `Available()` non si aggiornano dopo `Read`: scritti e letti 11 byte, `Len()` resta 11 e `Available()` 89 (emerso durante S-01; `Read` non è usato in produzione) | REPRO | `writer/limited_buffer.go:78-110` | S-03 |
 
 ---
 
@@ -493,7 +495,7 @@ I "temi di accettazione" sono il materiale di partenza per i requirements EARS: 
 #### S-03 `response-body-integrity` — ondata 1 · contratto: ripristina (+ D-01, D-02)
 
 - **Obiettivo**: risposte integre e limiti di dimensione affidabili.
-- **Finding**: F-01, F-07, F-10.
+- **Finding**: F-01, F-07, F-10, F-50.
 - **Temi di accettazione**:
   - le risposte sotto il limite arrivano integre (byte e `Content-Length`) per ogni dimensione e chunking;
   - un `Content-Length` dichiarato oltre il limite produce un errore strutturato prima del body;
@@ -656,10 +658,10 @@ Per Walden sono manutenzioni che preservano il contratto: si verificano con i te
 
 | Spec | Nome | Ondata | Finding | Stato | Spec Walden |
 |---|---|---|---|---|---|
-| — | baseline Go 1.27.1 | 0 | — | fatta, da committare | — (manutenzione) |
-| S-01 | `test-suite-hygiene` | 0 | F-27, F-41, F-42 | da iniziare | — |
+| — | baseline Go 1.27.1 | 0 | — | fatta, committata (`bd9325c`, `5838408`) | — (manutenzione) |
+| S-01 | `test-suite-hygiene` | 0 | F-27, F-41, F-42 | completata il 29/09/2026: 6/6 task `verified`, da committare | `.walden/specs/test-suite-hygiene/` |
 | S-02 | `ci-quality-gates` | 0 | F-40, F-43, F-44, F-45 | da iniziare | — |
-| S-03 | `response-body-integrity` | 1 | F-01, F-07, F-10 | da iniziare | — |
+| S-03 | `response-body-integrity` | 1 | F-01, F-07, F-10, F-50 | da iniziare | — |
 | S-04 | `request-body-forwarding` | 1 | F-02, F-03 | da iniziare | — |
 | S-05 | `websocket-proxy-security` | 1 | F-13, F-14 | da iniziare | — |
 | S-06 | `hot-reload-consistency` | 1 | F-23, F-24, F-25, F-26 | da iniziare | — |
@@ -721,7 +723,9 @@ Le raccomandazioni sono proposte da confermare: ogni decisione si chiude nei req
 2. CLI: nel `PATH` c'è `walden` 0.10.4 (`~/go/bin`), in `~/.local/bin` c'è la 0.11.0. Sono entrambe compatibili, ma conviene usarne una sola per tutto il portfolio.
 3. `walden repo init`, poi compilare `.walden/constitution.md` con il contesto qui sotto.
 
-**Bozza di contesto per la constitution** (da confermare, non ancora applicata)
+**Stato del bootstrap (29/09/2026)**: baseline committata; `walden repo init` eseguito con la CLI 0.11.0; constitution compilata con il contesto approvato; S-01 completata (6/6 task con evidenze `verified`).
+
+**Contesto per la constitution** (approvato il 29/09/2026 e applicato in `.walden/constitution.md`)
 
 - **Stack**: Go 1.27.1, modulo `dito`; binari `cmd/` (proxy) e `cmd/plugin-signer`; plugin tramite il package `plugin` (CGO), compilati con la stessa toolchain dell'host.
 - **Verifiche standard**: `go vet ./...`, `go test -race -count=1 ./...`, golangci-lint v2 compilato con Go ≥ 1.27, `govulncheck ./...`.

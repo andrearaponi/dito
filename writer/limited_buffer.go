@@ -74,10 +74,12 @@ func (lb *LimitedBuffer) WriteString(s string) (int, error) {
 	return lb.Write([]byte(s))
 }
 
-// Read reads data from the buffer
+// Read reads data from the buffer.
+// It takes the write lock: bytes.Buffer.Read advances the read offset and
+// resets the buffer once drained, so it is not a read-only operation.
 func (lb *LimitedBuffer) Read(p []byte) (int, error) {
-	lb.mu.RLock()
-	defer lb.mu.RUnlock()
+	lb.mu.Lock()
+	defer lb.mu.Unlock()
 	return lb.buffer.Read(p)
 }
 

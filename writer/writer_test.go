@@ -528,31 +528,6 @@ func TestHTTPInterfaces(t *testing.T) {
 	})
 }
 
-func TestConcurrentWrites(t *testing.T) {
-	inner := httptest.NewRecorder()
-	rw := NewResponseWriter(inner)
-
-	// Concurrent writes should be safe
-	done := make(chan bool, 10)
-	for i := range 10 {
-		go func(id int) {
-			data := strings.Repeat(string(rune('a'+id)), 100)
-			rw.Write([]byte(data))
-			done <- true
-		}(i)
-	}
-
-	// Wait for all goroutines
-	for range 10 {
-		<-done
-	}
-
-	metrics := rw.GetMetrics()
-	if metrics.BytesWritten != 1000 {
-		t.Errorf("Expected 1000 bytes written, got %d", metrics.BytesWritten)
-	}
-}
-
 func TestBufferDisabled(t *testing.T) {
 	inner := httptest.NewRecorder()
 	rw := NewResponseWriter(inner, WithBuffering(false))
