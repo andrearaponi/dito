@@ -286,15 +286,20 @@ response_limits:
 	assert.NoError(t, err)
 	config.UpdateConfig(initialConfig)
 
-	callbackInvoked := false
+	changes := make(chan *config.ProxyConfig, 1)
 	callback := func(newConfig *config.ProxyConfig) {
-		callbackInvoked = true
+		select {
+		case changes <- newConfig:
+		default: // never block the watcher goroutine on later reloads
+		}
 	}
 
 	testLogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	go config.WatchConfig(file.Name(), callback, testLogger)
 
+	// The watcher records the initial modification time on its first check,
+	// about 2 s after start; the file must change only after that check.
 	time.Sleep(3 * time.Second)
 
 	updatedContent := `
@@ -305,6 +310,10 @@ response_limits:
 	err = os.WriteFile(file.Name(), []byte(updatedContent), 0644)
 	assert.NoError(t, err)
 
-	time.Sleep(3 * time.Second)
-	assert.True(t, callbackInvoked)
+	select {
+	case newConfig := <-changes:
+		assert.Equal(t, "9090", newConfig.Port)
+	case <-time.After(10 * time.Second):
+		t.Fatal("WatchConfig did not invoke the callback after the configuration file changed")
+	}
 }

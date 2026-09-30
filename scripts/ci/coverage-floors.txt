@@ -1,0 +1,17 @@
+# Coverage floors per package (S-02, R5): integer percentages, rounded down
+# from the coverage each package gets from its own tests (go test -cover).
+#
+# A floor may only go up: raise it when you add tests. Remove a line only
+# when its package is deleted; make coverage enforces both rules.
+dito/app 47
+dito/cmd 0
+dito/cmd/plugin-signer 0
+dito/config 79
+dito/handlers 45
+dito/logging 97
+dito/metrics 58
+dito/middlewares 0
+dito/plugin 0
+dito/transport 34
+dito/websocket 0
+dito/writer 79

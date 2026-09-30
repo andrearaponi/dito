@@ -49,7 +49,7 @@ func InitializeLogger(level string) *slog.Logger {
 
 	levelVar.Set(logLevel)
 
-	handler := tint.NewHandler(os.Stdout, &tint.Options{Level: levelVar})
+	handler := tint.NewTextHandler(os.Stdout, &tint.Options{Level: levelVar})
 	return slog.New(handler)
 }
 

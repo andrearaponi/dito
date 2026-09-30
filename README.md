@@ -72,7 +72,7 @@ dito/
 
 ## ⚙️ Installation
 
-Ensure you have Go (>= 1.21) and `make` installed.
+Ensure you have Go (>= 1.27.1) and `make` installed. Plugins must be built with exactly the same Go toolchain as the Dito binary.
 
 ### Quick Start (Recommended)
 
@@ -132,9 +132,13 @@ make run
 | 🧹 **Cleanup** | `clean` | Remove all build artifacts |
 | | `clean-plugins` | Clean plugin binaries only |
 | 🧪 **Development** | `test` | Run tests |
-| | `vet` | Run go vet |
+| | `vet` | Run go vet on the main module and on the plugins |
 | | `fmt` | Format code |
 | | `sonar` | Run SonarQube analysis |
+| 🔁 **CI** | `ci` | Run every CI check except the image build, stopping at the first failure |
+| | `ci-selftest` | Prove that every CI gate fails on the defect it must catch |
+| | `image` | Build the linux/amd64 container image without pushing it |
+| | `lint-all` | Show every golangci-lint issue, including the pre-existing ones |
 
 ### 🛠️ Manual Installation (Advanced)
 
@@ -423,6 +427,48 @@ metrics:
    enabled: true # Enable or disable metrics.
    path: "/metrics" # The path on which the metrics will be exposed.
 ```
+## 🔁 Continuous Integration
+
+Every pull request to `main`, every push to `main` and a weekly scheduled run (Mondays, 06:00 UTC) run the `CI` workflow (`.github/workflows/ci.yml`). Each job runs exactly one `make` target, so every check can be reproduced locally:
+
+| Job | Local command | What it checks |
+|-----|---------------|----------------|
+| `tools` | `make tools-check` | Verification tools at the versions pinned in `tools.mk`, built with the Go version of `go.mod` |
+| `build` | `make build-check` | The proxy, `plugin-signer` and the plugins compile |
+| `vet` | `make vet` | `go vet` on the main module and on the plugins |
+| `modules` | `make modules` | Tidy `go.mod`/`go.sum`, one Go version everywhere, same versions for modules linked into both the proxy and a plugin |
+| `test` | `make test-race` | Tests with the race detector, in random order |
+| `hermetic` | `make test-hermetic` | Tests with outbound network traffic restricted to loopback |
+| `lint` | `make lint` | golangci-lint, reporting only the issues introduced by the change |
+| `vuln` | `make vuln` | `govulncheck` on the main module and on the plugins |
+| `coverage` | `make coverage` | Coverage of every package against the floors in `scripts/ci/coverage-floors.txt` |
+| `smoke` | `make smoke-plugins` | Builds, signs (throwaway keys) and loads the example plugin, then proxies a request through it |
+| `image` | `make image` | Container image build (`linux/amd64`, not pushed) |
+| `workflows` | `make workflows` | actionlint plus the project policies: actions pinned by SHA, read-only permissions, tool versions, Renovate configuration |
+
+`make ci` runs all of them except `image`, in the same order, and stops at the first failure. `make ci-selftest` runs the mutation harness: for every gate it injects the defect the gate must catch (a compile error, a data race, an untidy `go.mod`, a tampered plugin signature, a coverage drop, ...) and verifies that the gate fails.
+
+### Local requirements
+
+- Go with automatic toolchain switching: the Makefile sets `GOTOOLCHAIN=auto` and uses the version declared in `go.mod`, even if the installed Go is older.
+- A C compiler (CGO) for the race detector and the plugins, plus `curl` and `jq`.
+- `make test-hermetic`: on macOS it uses the built-in `sandbox-exec`; on Linux it needs `sudo`, `unshare`, `setpriv` and `ip` (util-linux, iproute2).
+- `make image`: Docker or Podman.
+
+### Policies
+
+- **Tool versions** live only in `tools.mk`. Tools run with `go run`, so they never enter `go.mod`, whose versions are shared with the plugins.
+- **Coverage floors** may only go up: raise them in `scripts/ci/coverage-floors.txt` when you add tests, and remove a line only when its package is deleted.
+- **Lint** blocks only new issues, so the existing debt does not block unrelated changes; `make lint-all` shows everything.
+
+### Required checks (Controlli obbligatori)
+
+Enable branch protection on `main` (Settings → Branches) and mark these checks as required: `tools`, `build`, `vet`, `modules`, `test`, `hermetic`, `lint`, `vuln`, `coverage`, `smoke`, `image`, `workflows`. `Validate Walden` runs only when `.walden/` changes, so it must not be required.
+
+### Dependency updates
+
+[Renovate](https://github.com/apps/renovate) keeps Go modules, GitHub Actions (pinned by commit SHA), Docker base images (pinned by digest) and the tools in `tools.mk` up to date. Install the Renovate GitHub App on the repository; its configuration is `renovate.json`: non-major updates are grouped in one weekly pull request, and `go mod tidy` also runs in the plugin module.
+
 ## Reporting Issues
 
 If you encounter any issues while using Dito, please follow these steps to open an issue on the GitHub repository:

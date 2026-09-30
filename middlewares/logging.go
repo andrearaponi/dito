@@ -33,7 +33,7 @@ const numLogWorkers = 5
 // init initializes the logging workers.
 func init() {
 	// Start multiple goroutines for logging
-	for i := 0; i < numLogWorkers; i++ {
+	for range numLogWorkers {
 		go func() {
 			for entry := range logChannel {
 				processLogEntry(entry)

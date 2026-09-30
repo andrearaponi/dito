@@ -2,6 +2,8 @@ package writer
 
 import (
 	"bytes"
+	"errors"
+	"io"
 	"strings"
 	"sync"
 	"testing"
@@ -397,11 +399,11 @@ func TestLimitedBuffer_ConcurrentAccess(t *testing.T) {
 	writesPerGoroutine := 10
 
 	// Start multiple writers
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < writesPerGoroutine; j++ {
+			for range writesPerGoroutine {
 				data := []byte(strings.Repeat("a", 5))
 				lb.Write(data)
 			}
@@ -409,12 +411,12 @@ func TestLimitedBuffer_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Start multiple readers
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
 			buf := make([]byte, 10)
-			for j := 0; j < writesPerGoroutine; j++ {
+			for range writesPerGoroutine {
 				lb.Read(buf)
 				_ = lb.String()
 				_ = lb.Bytes()
@@ -434,6 +436,71 @@ func TestLimitedBuffer_ConcurrentAccess(t *testing.T) {
 	}
 	if lb.Available() < 0 {
 		t.Errorf("Available space cannot be negative: %d", lb.Available())
+	}
+}
+
+// TestLimitedBuffer_ConcurrentReadsExactlyOnce verifies that concurrent Read
+// calls hand out every buffered byte to exactly one caller.
+func TestLimitedBuffer_ConcurrentReadsExactlyOnce(t *testing.T) {
+	const (
+		repetitions = 128
+		size        = 256 * repetitions // every byte value 0-255 repeated 128 times
+		readers     = 8
+		chunk       = 7 // odd size so reads straddle value boundaries
+	)
+
+	lb := NewLimitedBuffer(size)
+	data := make([]byte, size)
+	for i := range data {
+		data[i] = byte(i % 256)
+	}
+	if n, err := lb.Write(data); err != nil || n != size {
+		t.Fatalf("Write() = %d, %v; want %d, nil", n, err, size)
+	}
+
+	var (
+		wg     sync.WaitGroup
+		mu     sync.Mutex
+		counts [256]int
+		total  int
+	)
+	for range readers {
+		wg.Go(func() {
+			var local [256]int
+			localTotal := 0
+			buf := make([]byte, chunk)
+			for {
+				n, err := lb.Read(buf)
+				for _, b := range buf[:n] {
+					local[b]++
+				}
+				localTotal += n
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				if err != nil {
+					t.Errorf("Read() unexpected error: %v", err)
+					break
+				}
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+			for value, count := range local {
+				counts[value] += count
+			}
+			total += localTotal
+		})
+	}
+	wg.Wait()
+
+	if total != size {
+		t.Fatalf("read %d bytes in total, want %d", total, size)
+	}
+	for value, count := range counts {
+		if count != repetitions {
+			t.Errorf("byte value %d read %d times, want %d", value, count, repetitions)
+		}
 	}
 }
 

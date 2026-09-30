@@ -11,14 +11,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// setupTestConfig initializes a sample configuration for testing.
-func setupTestConfig() *config.ProxyConfig {
+// setupTestConfig initializes a sample configuration that proxies /test to targetURL.
+func setupTestConfig(targetURL string) *config.ProxyConfig {
 	cfg := &config.ProxyConfig{
 		Port: "8080",
 		Logging: config.Logging{
@@ -29,7 +30,7 @@ func setupTestConfig() *config.ProxyConfig {
 		Locations: []config.LocationConfig{
 			{
 				Path:      "/test",
-				TargetURL: "http://example.com",
+				TargetURL: targetURL,
 			},
 		},
 	}
@@ -78,8 +79,25 @@ func setupDito() *app.Dito {
 }
 
 func TestDynamicProxyHandler(t *testing.T) {
+	// Loopback backend owned by the test: the suite must not depend on external hosts.
+	type receivedRequest struct {
+		method string
+		path   string
+	}
+	var (
+		mu       sync.Mutex
+		received []receivedRequest
+	)
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		received = append(received, receivedRequest{method: r.Method, path: r.URL.Path})
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(backend.Close)
+
 	// Set up the configuration and Dito instance.
-	config.UpdateConfig(setupTestConfig())
+	config.UpdateConfig(setupTestConfig(backend.URL))
 	dito := setupDito()
 
 	// Create a request to test the handler.
@@ -99,4 +117,12 @@ func TestDynamicProxyHandler(t *testing.T) {
 
 	// Check that the status code is what you expect.
 	assert.Equal(t, http.StatusOK, rr.Code)
+
+	// The proxied request must have reached the loopback backend, exactly once.
+	mu.Lock()
+	defer mu.Unlock()
+	if assert.Len(t, received, 1, "the loopback backend must receive exactly one proxied request") {
+		assert.Equal(t, http.MethodGet, received[0].method)
+		assert.Equal(t, "/", received[0].path)
+	}
 }

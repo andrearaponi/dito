@@ -242,7 +242,7 @@ func TestLogRequestCompact(t *testing.T) {
 
 	LogRequestCompact(logger, req, bodyBytes, requestHeaders, http.StatusCreated, 500*time.Millisecond)
 
-	var logOutput map[string]interface{}
+	var logOutput map[string]any
 	err := json.Unmarshal(buf.Bytes(), &logOutput)
 	assert.NoError(t, err, "Failed to unmarshal log output")
 
@@ -275,7 +275,7 @@ func TestLogWebSocketMessage(t *testing.T) {
 		expectedLevel   slog.Level
 		expectedMsg     string
 		expectErrorAttr bool
-		expectedAttrs   map[string]interface{}
+		expectedAttrs   map[string]any
 	}{
 		{
 			name:          "text message",
@@ -284,7 +284,7 @@ func TestLogWebSocketMessage(t *testing.T) {
 			err:           nil,
 			expectedLevel: slog.LevelInfo,
 			expectedMsg:   "WebSocket text message received",
-			expectedAttrs: map[string]interface{}{"type": "Text", "message_content": "hello websocket"},
+			expectedAttrs: map[string]any{"type": "Text", "message_content": "hello websocket"},
 		},
 		{
 			name:          "text message truncation",
@@ -293,7 +293,7 @@ func TestLogWebSocketMessage(t *testing.T) {
 			err:           nil,
 			expectedLevel: slog.LevelInfo,
 			expectedMsg:   "WebSocket text message received",
-			expectedAttrs: map[string]interface{}{"type": "Text", "message_content": strings.Repeat("a", 100) + "..."},
+			expectedAttrs: map[string]any{"type": "Text", "message_content": strings.Repeat("a", 100) + "..."},
 		},
 		{
 			name:          "binary message",
@@ -302,7 +302,7 @@ func TestLogWebSocketMessage(t *testing.T) {
 			err:           nil,
 			expectedLevel: slog.LevelInfo,
 			expectedMsg:   "WebSocket message received",
-			expectedAttrs: map[string]interface{}{"type": "Binary", "message_size_bytes": float64(3)}, // JSON numbers
+			expectedAttrs: map[string]any{"type": "Binary", "message_size_bytes": float64(3)}, // JSON numbers
 		},
 		{
 			name:          "ping message",
@@ -311,7 +311,7 @@ func TestLogWebSocketMessage(t *testing.T) {
 			err:           nil,
 			expectedLevel: slog.LevelDebug,
 			expectedMsg:   "WebSocket ping/pong message received",
-			expectedAttrs: map[string]interface{}{"type": "Ping"},
+			expectedAttrs: map[string]any{"type": "Ping"},
 		},
 		{
 			name:          "pong message",
@@ -320,7 +320,7 @@ func TestLogWebSocketMessage(t *testing.T) {
 			err:           nil,
 			expectedLevel: slog.LevelDebug,
 			expectedMsg:   "WebSocket ping/pong message received",
-			expectedAttrs: map[string]interface{}{"type": "Pong"},
+			expectedAttrs: map[string]any{"type": "Pong"},
 		},
 		{
 			name:            "message with error",
@@ -330,7 +330,7 @@ func TestLogWebSocketMessage(t *testing.T) {
 			expectedLevel:   slog.LevelError,
 			expectedMsg:     "WebSocket message processing error",
 			expectErrorAttr: true,
-			expectedAttrs:   map[string]interface{}{"type": "Text", "error": "test ws error"},
+			expectedAttrs:   map[string]any{"type": "Text", "error": "test ws error"},
 		},
 		{
 			name:          "close message",
@@ -339,7 +339,7 @@ func TestLogWebSocketMessage(t *testing.T) {
 			err:           nil,
 			expectedLevel: slog.LevelInfo,
 			expectedMsg:   "WebSocket message received",
-			expectedAttrs: map[string]interface{}{"type": "Close", "message_size_bytes": float64(2)},
+			expectedAttrs: map[string]any{"type": "Close", "message_size_bytes": float64(2)},
 		},
 		{
 			name:          "unknown message type",
@@ -348,7 +348,7 @@ func TestLogWebSocketMessage(t *testing.T) {
 			err:           nil,
 			expectedLevel: slog.LevelInfo,
 			expectedMsg:   "WebSocket message received",
-			expectedAttrs: map[string]interface{}{"type": "Unknown", "message_size_bytes": float64(12)},
+			expectedAttrs: map[string]any{"type": "Unknown", "message_size_bytes": float64(12)},
 		},
 	}
 
@@ -360,7 +360,7 @@ func TestLogWebSocketMessage(t *testing.T) {
 			logTimeStart := time.Now()
 			LogWebSocketMessage(logger, tc.messageType, tc.message, tc.err, 100*time.Millisecond)
 
-			var logOutput map[string]interface{}
+			var logOutput map[string]any
 			err := json.Unmarshal(buf.Bytes(), &logOutput)
 			assert.NoError(t, err, "Failed to unmarshal log output: %s", buf.String())
 
@@ -426,7 +426,7 @@ func TestLogResponseMetrics(t *testing.T) {
 
 		LogResponseMetrics(logger, metrics, "/api/test")
 
-		var logOutput map[string]interface{}
+		var logOutput map[string]any
 		err := json.Unmarshal(buf.Bytes(), &logOutput)
 		assert.NoError(t, err)
 
@@ -455,7 +455,7 @@ func TestLogResponseMetrics(t *testing.T) {
 
 		LogResponseMetrics(logger, metrics, "/large-page")
 
-		var logOutput map[string]interface{}
+		var logOutput map[string]any
 		err := json.Unmarshal(buf.Bytes(), &logOutput)
 		assert.NoError(t, err)
 
@@ -480,7 +480,7 @@ func TestLogResponseMetrics(t *testing.T) {
 
 		LogResponseMetrics(logger, metrics, "/video/stream")
 
-		var logOutput map[string]interface{}
+		var logOutput map[string]any
 		err := json.Unmarshal(buf.Bytes(), &logOutput)
 		assert.NoError(t, err)
 

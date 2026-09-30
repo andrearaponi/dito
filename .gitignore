@@ -15,3 +15,8 @@ configs/config-*.yaml
 
 # Docker Compose (moved to deployments/docker/)
 /docker-compose.yml
+
+# Bob the Fixer local configuration
+bobthefixer.env
+# SonarQube local configuration
+sonar-project.properties

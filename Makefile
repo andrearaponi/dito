@@ -1,5 +1,11 @@
-# GO_CMD: The command to run Go# .PHONY: Declares phony targets that are not actual files.
-.PHONY: build setup setup-prod build-plugin-signer generate-keys generate-prod-keys sign-plugins-prod sonar test vet fmt clean run build-plugins clean-plugins sign-plugins update-config update-prod-config quick-start help debug-config# GO_BUILD: The command to build the Go project.
+# Verification tools and CI targets (S-02): tool versions live in tools.mk.
+include tools.mk
+
+# Let an older local Go switch to the toolchain required by go.mod.
+export GOTOOLCHAIN ?= auto
+
+# GO_CMD: The command to run Go.
+# GO_BUILD: The command to build the Go project.
 # GO_TEST: The command to run Go tests.
 # GO_VET: The command to run Go vet.
 # GO_FMT: The command to format Go code.
@@ -226,9 +232,11 @@ clean-plugins:
 	@find plugins -name "*.so" -type f -delete
 	@find plugins -name "*.so.sig" -type f -delete
 
-# vet: Runs the Go vet tool.
+# vet: Runs go vet on the main module and on every plugin module.
 vet:
-	$(GO_VET) $(PKG)
+	@$(GO_VET) $(PKG)
+	@for dir in plugins/*/; do (cd "$$dir" && $(GO_VET) ./...) || exit 1; done
+	@echo "vet: ok"
 
 # fmt: Formats the Go code.
 fmt:
@@ -410,3 +418,129 @@ logs-ocp:
 	@NAMESPACE=$${NAMESPACE:-dito}; \
 	echo "📍 Namespace: $$NAMESPACE"; \
 	oc logs -l app=dito -n $$NAMESPACE --tail=100 -f
+
+# ---------------------------------------------------------------------------
+# Continuous integration (S-02). Each CI job runs exactly one of these targets
+# and every target prints "<target>: ok" only when all its checks pass.
+# ---------------------------------------------------------------------------
+
+.PHONY: ci tools-check ci-selftest build-check modules test-race test-hermetic image lint lint-all vuln smoke-plugins coverage workflows spec-validate
+
+# tools-check: Verifies tool versions (tools.mk) and the Go that builds them (go.mod).
+tools-check:
+	@scripts/ci/tools-check.sh
+
+# ci-selftest: Mutation harness proving each gate fails on its defect (SELFTEST_CASES selects cases).
+ci-selftest:
+	@SELFTEST_CASES="$(SELFTEST_CASES)" scripts/ci/selftest.sh
+
+# build-check: Builds the proxy, the plugin-signer and every plugin; outputs go to a temporary directory.
+build-check:
+	@go build ./...
+	@tmp=$$(mktemp -d) && trap 'rm -rf "$$tmp"' EXIT && \
+	for dir in plugins/*/; do \
+		name=$$(basename "$$dir"); \
+		(cd "$$dir" && go build -buildmode=plugin -o "$$tmp/$$name.so" .) || exit 1; \
+	done
+	@echo "build-check: ok"
+
+# modules: Tidy go.mod/go.sum, one Go version everywhere, same versions for modules shared by host and plugins.
+modules:
+	@scripts/ci/modules-check.sh
+
+# test-race: Runs every test with the race detector, in random order (-shuffle), without caching.
+test-race:
+	@go test -race -shuffle=on -count=1 ./...
+	@echo "test-race: ok"
+
+# test-hermetic: Runs the tests with outbound traffic restricted to loopback, plus a negative control.
+# Test binaries are compiled first, outside the isolation, so the isolated run downloads nothing.
+test-hermetic:
+	@go test -count=1 -run '^$$' ./... > /dev/null
+	@scripts/ci/hermetic.sh go test -count=1 ./...
+	@scripts/ci/hermetic.sh sh -c 'curl -sS -m 3 -o /dev/null http://192.0.2.1/; rc=$$?; \
+		if [ "$$rc" -ne 7 ]; then echo "test-hermetic: negative control failed: curl exit $$rc, expected 7 (connection refused by the isolation)" >&2; exit 1; fi'
+	@echo "test-hermetic: negative control ok (external connection refused)"
+	@echo "test-hermetic: ok"
+
+CONTAINER_ENGINE ?= $(shell if docker info >/dev/null 2>&1; then echo docker; elif podman info >/dev/null 2>&1; then echo podman; fi)
+IMAGE_TAG ?= dito:ci-check
+
+# image: Builds the linux/amd64 container image without pushing it (docker or podman).
+image:
+	@if [ -z "$(CONTAINER_ENGINE)" ]; then echo "image: no container engine available (docker or podman)" >&2; exit 1; fi
+	@$(CONTAINER_ENGINE) build --platform linux/amd64 -t $(IMAGE_TAG) -f Dockerfile .
+	@echo "image: ok"
+
+LINT_BASE ?= main
+LINT_MODE ?= merge-base
+
+# lint: Reports only the golangci-lint issues introduced after LINT_BASE (LINT_MODE: merge-base or rev).
+lint:
+	@if [ "$(LINT_MODE)" = rev ]; then new="--new-from-rev=$(LINT_BASE)"; else new="--new-from-merge-base=$(LINT_BASE)"; fi; \
+	$(GOLANGCI_LINT) run $$new ./... && \
+	for dir in plugins/*/; do (cd "$$dir" && $(GOLANGCI_LINT) run $$new ./...) || exit 1; done
+	@echo "lint: ok"
+
+# lint-all: Reports every golangci-lint issue, including the pre-existing debt.
+lint-all:
+	@$(GOLANGCI_LINT) run ./...
+	@for dir in plugins/*/; do (cd "$$dir" && $(GOLANGCI_LINT) run ./...) || exit 1; done
+
+VULN_DIRS ?= . $(wildcard plugins/*)
+VULN_RUN_GOTOOLCHAIN ?=
+
+# vuln: Runs govulncheck on the main module and on every plugin (VULN_DIRS).
+# VULN_RUN_GOTOOLCHAIN scans with another Go standard library; the scanner is still built with go.mod's Go.
+vuln:
+	@for dir in $(VULN_DIRS); do \
+		echo "vuln: scanning $$dir"; \
+		(cd "$$dir" && $(GO_RUN_TOOL) $(if $(VULN_RUN_GOTOOLCHAIN),-exec "env GOTOOLCHAIN=$(VULN_RUN_GOTOOLCHAIN)") $(GOVULNCHECK_PKG)@$(GOVULNCHECK_VERSION) ./...) || exit 1; \
+	done
+	@echo "vuln: ok"
+
+SMOKE_PORT ?= 18181
+SMOKE_EXPECT_HEADER ?= X-Hello-Plugin
+SMOKE_TAMPER ?=
+
+# smoke-plugins: Builds, signs (throwaway keys) and loads the example plugin, then proxies a request through it.
+smoke-plugins:
+	@SMOKE_PORT="$(SMOKE_PORT)" SMOKE_EXPECT_HEADER="$(SMOKE_EXPECT_HEADER)" SMOKE_TAMPER="$(SMOKE_TAMPER)" scripts/ci/plugin-smoke.sh
+
+COVERAGE_BASE ?= main
+
+# coverage: Per-package coverage table, floors (scripts/ci/coverage-floors.txt), floor ratchet against COVERAGE_BASE.
+coverage:
+	@COVERAGE_BASE="$(COVERAGE_BASE)" scripts/ci/coverage-gate.sh
+
+# workflows: Project policies on the GitHub workflows, then actionlint (without shellcheck/pyflakes: same result everywhere).
+workflows:
+	@scripts/ci/workflows-check.sh
+	@$(ACTIONLINT) -shellcheck= -pyflakes=
+	@echo "workflows: ok"
+
+# spec-validate: Validates every Walden spec with the walden version pinned in tools.mk.
+spec-validate:
+	@for dir in .walden/specs/*/; do \
+		feature=$$(basename "$$dir"); \
+		if ! $(WALDEN) validate "$$feature" --all >/dev/null 2>&1; then \
+			$(WALDEN) validate "$$feature" --all >&2; echo "spec-validate: $$feature is not valid" >&2; exit 1; \
+		fi; \
+		echo "spec-validate: $$feature valid"; \
+	done
+	@echo "spec-validate: ok"
+
+# ci: Every CI check that needs no container engine, in pipeline order; stops at the first failure.
+ci:
+	@$(MAKE) --no-print-directory tools-check
+	@$(MAKE) --no-print-directory build-check
+	@$(MAKE) --no-print-directory vet
+	@$(MAKE) --no-print-directory modules
+	@$(MAKE) --no-print-directory test-race
+	@$(MAKE) --no-print-directory test-hermetic
+	@$(MAKE) --no-print-directory lint
+	@$(MAKE) --no-print-directory vuln
+	@$(MAKE) --no-print-directory coverage
+	@$(MAKE) --no-print-directory smoke-plugins
+	@$(MAKE) --no-print-directory workflows
+	@echo "ci: ok"
