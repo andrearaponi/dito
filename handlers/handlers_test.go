@@ -126,3 +126,30 @@ func TestDynamicProxyHandler(t *testing.T) {
 		assert.Equal(t, "/", received[0].path)
 	}
 }
+
+// TestNewHandler checks the handler shared by the binary and the e2e harness:
+// a request goes through it to the backend and the client gets its body.
+func TestNewHandler(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, "hello from backend")
+	}))
+	t.Cleanup(backend.Close)
+
+	config.UpdateConfig(setupTestConfig(backend.URL))
+	server := httptest.NewServer(handlers.NewHandler(setupDito(), nil))
+	t.Cleanup(server.Close)
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/test", nil)
+	if !assert.NoError(t, err) {
+		return
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if !assert.NoError(t, err) {
+		return
+	}
+	defer func() { _ = resp.Body.Close() }()
+	body, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "hello from backend", string(body))
+}

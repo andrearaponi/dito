@@ -6,6 +6,7 @@ import (
 	"dito/app"
 	"dito/config"
 	"dito/metrics"
+	cmid "dito/middlewares"
 	"dito/plugin"
 	"dito/transport"
 	"dito/websocket"
@@ -109,6 +110,24 @@ func DynamicProxyHandler(dito *app.Dito, w http.ResponseWriter, r *http.Request,
 
 	// No matching location found
 	sendError(w, r, http.StatusNotFound, "Not Found", nil)
+}
+
+// NewHandler returns the handler that serves every request: access logging
+// around the dynamic proxy with the loaded plugins. The binary and the e2e
+// harness both use it, so they run the same chain.
+//
+// Parameters:
+// - dito: The Dito application instance.
+// - plugins: Loaded plugins that may provide middleware.
+//
+// Returns:
+// - http.Handler: The root handler.
+func NewHandler(dito *app.Dito, plugins []plugin.Plugin) http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("/", cmid.LoggingMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		DynamicProxyHandler(dito, w, r, plugins)
+	}), dito))
+	return mux
 }
 
 // handleLocationMatch processes a request that matches a configured location.
