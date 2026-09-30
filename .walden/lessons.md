@@ -15,3 +15,8 @@ Review this file before non-trivial work when the current request matches past m
 - Lesson: Il primo target del Makefile di Dito e' 'setup', che ha effetti collaterali (chiavi, binari, plugin nel repository, config in bin/): invocare make senza goal non e' mai un'operazione di sola lettura.
 - Guardrail: Invocare sempre make con un target esplicito; per ispezionare usare 'make -n <target>' oppure 'make -f - <target>'. Dopo un errore del genere, confrontare bin/ e plugins/ con lo stato precedente prima di proseguire.
 
+### 2026-09-30T17:34:09Z | ci-quality-gates | execute
+- Trigger: Task 7.3 proof (observe-github.sh runs) failed on the first real run: the push log did contain 'tools-check: ok (go1.27.1)', but 'gh run view --log | grep -q' under set -o pipefail exited 141 because gh got SIGPIPE when grep stopped at the first match.
+- Lesson: Under pipefail, 'producer | grep -q' is a false negative whenever the producer writes more than a pipe buffer after the match; scripts that can only run after a push were never exercised on real data before their proof.
+- Guardrail: In pipefail scripts match against a captured variable or file (case, grep FILE), never 'large-producer | grep -q'; exercise post-push observation scripts against a real or recorded run log before relying on their proof.
+
