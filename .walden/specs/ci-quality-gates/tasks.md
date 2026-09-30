@@ -1,9 +1,9 @@
 ---
 walden_schema_version: v1alpha1
 status: approved
-approved_at: 2026-09-30T07:27:08Z
-last_modified: 2026-09-30T17:34:09Z
-approved_fingerprint: sha256:b5c8254076762051a910cdc412de5d69916f55ee064ddb69b334af9e26218efe
+approved_at: 2026-09-30T18:07:22Z
+last_modified: 2026-09-30T18:07:22Z
+approved_fingerprint: sha256:8f3d9187cf7e574ad2d4d4fb5df7074c7694a160eae1e75e4b40247ef6c543b9
 source_design_approved_at: 2026-09-30T07:00:40Z
 source_design_fingerprint: sha256:3d9aa995ab487513125606401422d095b83b782bd3c3abd58399dbba5acc78aa
 ---
@@ -267,6 +267,8 @@ Note comuni a tutti i task:
       - la politica delle soglie di copertura.
 
       Nel template della PR, la voce `make ci`. Nel PRD, F-51, F-52 e lo stato di S-02. Tutto questo va fatto prima del checkpoint 7.2 (lezione registrata).
+
+      Revisione del 30/09/2026: il PRD `SEPTEMBER-STATE.md`, aggiornato come richiesto nel commit `c18a720`, è stato poi tolto dal repository su richiesta dell'owner ed è ora un documento locale. La proof non lo verifica più.
     - Requirements: `NFR4`
     - Design: Architecture, Failure Modes And Tradeoffs
     - Verification:
@@ -274,7 +276,6 @@ Note comuni a tutti i task:
       - command: ["grep", "-q", "Controlli obbligatori", "README.md"]
       - command: ["grep", "-q", "Renovate", "README.md"]
       - command: ["grep", "-q", "make ci", ".github/pull_request_template.md"]
-      - command: ["grep", "-q", "F-52", "SEPTEMBER-STATE.md"]
   - [x] 7.2 Checkpoint locale completo
     - Nessuna modifica: `make ci`, `make image` e l'intero harness di mutazione (24 casi).
     - Requirements: `R2.AC1`, `R2.AC2`, `R2.AC3`, `R2.AC4`, `R2.AC5`, `R2.AC6`, `R3.AC1`, `R3.AC2`, `R3.AC3`, `R4.AC1`, `R4.AC2`, `R4.AC3`, `R5.AC1`, `R5.AC2`, `R5.AC3`, `R6.AC1`, `R6.AC2`, `R6.AC3`
