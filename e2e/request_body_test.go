@@ -63,12 +63,8 @@ func TestRequestBody_LimitWithContentLength(t *testing.T) {
 	Run(t, func(s *S) {
 		api := s.Backend("api", text("ok"))
 		p := s.Proxy(uploadLocation)
-		const size = 11 << 20
-		req := s.NewRequest(http.MethodPost, p.URL+"/up", &patternReader{n: size})
-		req.ContentLength = size
-		req.Header.Set("Content-Type", "application/octet-stream")
-		req.Header.Set("Expect", "100-continue")
-		r := s.Do(req)
+		// 11 MiB declared, 64 KiB sent: the proxy decides on the declared size.
+		r := s.DoPartialUpload(p.URL+"/up", 11<<20, 64<<10)
 		assert.Equal(s, http.StatusRequestEntityTooLarge, r.Status)
 		e, err := r.ProxyError()
 		require.NoError(s, err)

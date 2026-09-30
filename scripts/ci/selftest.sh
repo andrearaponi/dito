@@ -24,7 +24,7 @@ SC_FAKE=""
 
 # Registered cases, in execution order. Each one is a function
 # case_<name with underscores> defined below.
-ALL_CASES="build-proxy-error build-plugin-error vet-printf modules-untidy modules-go-version-skew modules-shared-version-skew test-failing test-data-race hermetic-external-dial image-broken-dockerfile lint-new-violation lint-legacy-only vuln-reachable smoke-tampered-signature smoke-missing-header coverage-below-floor coverage-floor-lowered coverage-package-removed workflows-tag-ref workflows-write-permission workflows-hardcoded-tool-version workflows-job-without-make renovate-missing-gomodtidyall ci-stops-at-first-failure"
+ALL_CASES="build-proxy-error build-plugin-error vet-printf modules-untidy modules-go-version-skew modules-shared-version-skew test-failing test-data-race hermetic-external-dial image-broken-dockerfile lint-new-violation lint-legacy-only vuln-reachable smoke-tampered-signature smoke-missing-header coverage-below-floor coverage-floor-lowered coverage-package-removed workflows-tag-ref workflows-write-permission workflows-hardcoded-tool-version workflows-job-without-make renovate-missing-gomodtidyall ci-stops-at-first-failure e2e-regression e2e-new-scenario"
 
 log() { printf '%s\n' "$*"; }
 
@@ -248,12 +248,13 @@ case_smoke_missing_header() { C_TARGET=smoke-plugins; C_VARS="SMOKE_EXPECT_HEADE
 
 # R5.AC2: coverage below a floor fails; R5.AC3: lowering a floor fails, while
 # deleting a package together with its floor passes.
-case_coverage_below_floor() { C_TARGET=coverage; C_BASE_VARS="COVERAGE_BASE=HEAD"; C_MUTATE=mut_coverage_below_floor; C_CONTAINS="below floor"; }
+case_coverage_below_floor() { C_TARGET=coverage; C_BASE_VARS="COVERAGE_BASE=HEAD COVERAGE_E2E=no"; C_MUTATE=mut_coverage_below_floor; C_CONTAINS="below floor"; }
 mut_coverage_below_floor() { rm app/app_test.go; }
-case_coverage_floor_lowered() { C_TARGET=coverage; C_BASE_VARS="COVERAGE_BASE=HEAD"; C_MUTATE=mut_coverage_floor_lowered; C_CONTAINS="floor lowered"; }
+case_coverage_floor_lowered() { C_TARGET=coverage; C_BASE_VARS="COVERAGE_BASE=HEAD COVERAGE_E2E=no"; C_MUTATE=mut_coverage_floor_lowered; C_CONTAINS="floor lowered"; }
 mut_coverage_floor_lowered() { set_floor dito/app 1; }
 case_coverage_package_removed() {
-	C_TARGET=coverage; C_BASE_VARS="COVERAGE_BASE=HEAD"; C_EXPECT=pass
+	# The e2e scenarios build cmd/plugin-signer, removed by this mutation: the case tests the gate alone.
+	C_TARGET=coverage; C_BASE_VARS="COVERAGE_BASE=HEAD COVERAGE_E2E=no"; C_EXPECT=pass
 	C_MUTATE=mut_coverage_package_removed; C_CONTAINS="coverage: ok"
 }
 mut_coverage_package_removed() { rm -rf cmd/plugin-signer && set_floor dito/cmd/plugin-signer ""; }
@@ -296,6 +297,40 @@ mut_renovate_missing_gomodtidyall() {
 case_ci_stops_at_first_failure() {
 	C_TARGET=ci; C_BASELINE=no; C_MUTATE=mut_vet_printf
 	C_CONTAINS="build-check: ok"; C_NOT_CONTAINS="test-race: ok"
+}
+
+# S-15 R5.AC5: a regression in a behavior covered only by an e2e scenario
+# (the Host rewrite of createDirector) fails the test check.
+case_e2e_regression() { C_TARGET=test-race; C_MUTATE=mut_e2e_regression; C_CONTAINS="TestHeaders_HostRewritten"; }
+mut_e2e_regression() { replace_first handlers/handlers.go 'req[.]Host = targetURL[.]Host' '_ = targetURL.Host'; }
+
+# S-15 R6.AC1: a new scenario is one file in e2e/, run by the suite without
+# changes to the harness.
+case_e2e_new_scenario() {
+	C_TARGET=e2e; C_BASE_VARS="SCENARIO=^TestZZSelftest_"; C_MUTATE=mut_e2e_new_scenario
+	C_CONTAINS="TestZZSelftest_NewScenario"
+}
+mut_e2e_new_scenario() {
+	cat >e2e/zz_selftest_scenario_test.go <<'GO'
+package e2e
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestZZSelftest_NewScenario(t *testing.T) {
+	Run(t, func(s *S) {
+		s.Backend("api", text("from the new scenario"))
+		p := s.Proxy(`
+  - path: "^/new$"
+    target_url: "{{backend "api"}}/"
+    replace_path: true`)
+		assert.Equal(s, "a different body", s.Get(p.URL+"/new").Body())
+	})
+}
+GO
 }
 
 # ---- self-check ------------------------------------------------------------

@@ -8,10 +8,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/textproto"
+	neturl "net/url"
 	"strings"
 	"time"
 
@@ -47,9 +50,7 @@ func (s *S) client() *http.Client {
 			Transport: &http.Transport{
 				DisableCompression: true, // observe the exact bytes on the wire
 				DisableKeepAlives:  true, // no state shared between requests
-				// Requests with "Expect: 100-continue" wait for the proxy before sending the body.
-				ExpectContinueTimeout: 5 * time.Second,
-				TLSClientConfig:       s.clientTLSConfig(),
+				TLSClientConfig:    s.clientTLSConfig(),
 			},
 			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 		}
@@ -252,4 +253,48 @@ func (r *Response) ProxyError() (proxyError, error) {
 	var e proxyError
 	err := json.Unmarshal(r.BodyPrefix, &e)
 	return e, err
+}
+
+// DoPartialUpload sends a POST declaring contentLength but writing only sent
+// bytes of body, then stops writing and reads the response. It observes how
+// the proxy answers an oversized upload without racing with the upload: a
+// client still writing when the proxy closes may see a broken pipe instead.
+func (s *S) DoPartialUpload(rawURL string, contentLength int64, sent int) *Response {
+	s.t.Helper()
+	r := &Response{}
+	u, err := neturl.Parse(rawURL)
+	if err != nil {
+		s.Fatalf("url %s: %v", rawURL, err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	defer cancel()
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "tcp", u.Host)
+	if err != nil {
+		r.Err = err
+		s.Logf("PARTIAL UPLOAD %s -> no connection: %v", rawURL, err)
+		return r
+	}
+	defer func() { _ = conn.Close() }()
+	_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
+	head := fmt.Sprintf("POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n",
+		u.RequestURI(), u.Host, contentLength)
+	if _, err := io.WriteString(conn, head); err != nil {
+		r.Err = err
+		return r
+	}
+	_, _ = conn.Write(make([]byte, sent))
+	resp, err := http.ReadResponse(bufio.NewReader(conn), nil)
+	if err != nil {
+		r.Err = err
+		s.Logf("PARTIAL UPLOAD %s (%d of %d bytes) -> no response: %v", rawURL, sent, contentLength, err)
+		return r
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var dg bodyDigest
+	_, r.ReadErr = io.Copy(&dg, resp.Body)
+	r.Status, r.Proto, r.Header, r.ContentLength = resp.StatusCode, resp.Proto, resp.Header, resp.ContentLength
+	r.BodyLen, r.BodySHA256, r.BodyPrefix = dg.n, dg.sum(), dg.prefix
+	s.Logf("PARTIAL UPLOAD %s (%d of %d bytes) -> %d body[:200]=%q", rawURL, sent, contentLength, r.Status, truncate(r.Body(), 200))
+	return r
 }

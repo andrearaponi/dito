@@ -450,14 +450,17 @@ modules:
 
 # test-race: Runs every test with the race detector, in random order (-shuffle), without caching.
 test-race:
-	@go test -race -shuffle=on -count=1 ./...
+	@go test -race -shuffle=on -count=1 $$(go list ./... | grep -v '/e2e$$')
+	@go test -race -shuffle=on -count=1 -v ./e2e/
 	@echo "test-race: ok"
 
 # test-hermetic: Runs the tests with outbound traffic restricted to loopback, plus a negative control.
 # Test binaries are compiled first, outside the isolation, so the isolated run downloads nothing.
 test-hermetic:
 	@go test -count=1 -run '^$$' ./... > /dev/null
-	@scripts/ci/hermetic.sh go test -count=1 ./...
+	@cd plugins/hello-plugin && go mod download
+	@pkgs=$$(go list ./... | grep -v '/e2e$$') && scripts/ci/hermetic.sh go test -count=1 $$pkgs
+	@scripts/ci/hermetic.sh go test -count=1 -v ./e2e/
 	@scripts/ci/hermetic.sh sh -c 'curl -sS -m 3 -o /dev/null http://192.0.2.1/; rc=$$?; \
 		if [ "$$rc" -ne 7 ]; then echo "test-hermetic: negative control failed: curl exit $$rc, expected 7 (connection refused by the isolation)" >&2; exit 1; fi'
 	@echo "test-hermetic: negative control ok (external connection refused)"
@@ -508,10 +511,13 @@ smoke-plugins:
 	@SMOKE_PORT="$(SMOKE_PORT)" SMOKE_EXPECT_HEADER="$(SMOKE_EXPECT_HEADER)" SMOKE_TAMPER="$(SMOKE_TAMPER)" scripts/ci/plugin-smoke.sh
 
 COVERAGE_BASE ?= main
+# COVERAGE_E2E=no skips the e2e scenarios after the gate: make ci-selftest uses it to test the gate alone.
+COVERAGE_E2E ?= yes
 
 # coverage: Per-package coverage table, floors (scripts/ci/coverage-floors.txt), floor ratchet against COVERAGE_BASE.
 coverage:
 	@COVERAGE_BASE="$(COVERAGE_BASE)" scripts/ci/coverage-gate.sh
+	@if [ "$(COVERAGE_E2E)" != no ]; then go test -count=1 -v ./e2e/; fi
 
 # workflows: Project policies on the GitHub workflows, then actionlint (without shellcheck/pyflakes: same result everywhere).
 workflows:
