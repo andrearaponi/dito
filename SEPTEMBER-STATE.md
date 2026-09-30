@@ -68,7 +68,7 @@
 
 - Dito è un reverse proxy L7 in Go (≈3.900 righe di produzione, ≈2.300 di test) con plugin firmati, hot reload, metriche Prometheus e WebSocket. Ultimo commit su `main`: 19/06/2025.
 - **Baseline aggiornata** a Go **1.27.1** con dipendenze aggiornate e immagine verificata: vulnerabilità note raggiungibili **31 → 0** (§5).
-- **50 finding** (49 dal deep dive, 1 emerso durante S-01): 4 🔴, 13 🟠, 23 🟡, 10 🔵. Tutti i 🔴 sono stati riprodotti.
+- **53 finding** (49 dal deep dive, 4 emersi durante S-01 e S-02): 4 🔴, 13 🟠, 24 🟡, 12 🔵. Tutti i 🔴 sono stati riprodotti.
 - I 4 critici:
   - risposte troncate senza errore (F-01);
   - POST di form rotti (F-02);
@@ -267,6 +267,9 @@ Branch `chore/go-1.27`, **committato** il 29/09/2026: `bd9325c` (toolchain, dipe
 | F-49 | 🟠 | Plugin basati sul package `plugin` di Go: CGO, stessa toolchain, dipendenze e flag tra host e plugin, niente unload né isolamento | OSS | `plugin/plugin.go`; `plugins/` | S-14 |
 | **I. Emersi durante le spec** | | | | | |
 | F-50 | 🔵 | `LimitedBuffer.Len()` e `Available()` non si aggiornano dopo `Read`: scritti e letti 11 byte, `Len()` resta 11 e `Available()` 89 (emerso durante S-01; `Read` non è usato in produzione) | REPRO | `writer/limited_buffer.go:78-110` | S-03 |
+| F-51 | 🔵 | Dipendenza dall'ordine dei test: `TestExposeMetricsHandler` passava solo se prima girava `TestRecordRequest`, che scrive nel registry globale (emerso durante S-02, corretto in S-02) | REPRO | `metrics/metrics_test.go:62` | S-02 |
+| F-52 | 🟡 | Host e plugin possono risolvere versioni diverse di un modulo condiviso (verificato con `yaml.v3` v3.0.0 contro v3.0.1) senza che `go build` o `go mod tidy` lo segnalino: il `.so` fallirebbe solo a runtime (emerso durante S-02, intercettato da `make modules`) | REPRO | `plugins/hello-plugin/go.mod` | S-02, S-14 |
+| F-53 | 🔵 | I test di `metrics` verificano valori assoluti di contatori globali: falliscono con `-count>1` (emerso durante S-02) | REPRO | `metrics/metrics_test.go:26-45` | S-11 |
 
 ---
 
@@ -481,7 +484,7 @@ I "temi di accettazione" sono il materiale di partenza per i requirements EARS: 
 #### S-02 `ci-quality-gates` — ondata 0 · contratto: nuovo
 
 - **Obiettivo**: ogni PR verificata automaticamente.
-- **Finding**: F-40, F-43, F-44, F-45.
+- **Finding**: F-40, F-43, F-44, F-45; emersi e gestiti durante la spec: F-51 (corretto) e F-52 (intercettato da `make modules`).
 - **Temi di accettazione**:
   - workflow con build, vet, `test -race`, golangci-lint v2 con configurazione versionata (baseline che blocca solo le issue nuove), govulncheck bloccante, build dell'immagine;
   - smoke end-to-end: build di host e plugin, firma, caricamento, richiesta proxata;
@@ -602,7 +605,7 @@ I "temi di accettazione" sono il materiale di partenza per i requirements EARS: 
 #### S-11 `metrics-accuracy` — ondata 3 · contratto: cambia (+ D-12)
 
 - **Obiettivo**: metriche esatte e con cardinalità limitata.
-- **Finding**: F-28, F-29, F-30, F-31.
+- **Finding**: F-28, F-29, F-30, F-31, F-53.
 - **Temi di accettazione**:
   - una sola registrazione per richiesta;
   - label per location e status numerico;
@@ -659,8 +662,8 @@ Per Walden sono manutenzioni che preservano il contratto: si verificano con i te
 | Spec | Nome | Ondata | Finding | Stato | Spec Walden |
 |---|---|---|---|---|---|
 | — | baseline Go 1.27.1 | 0 | — | fatta, committata (`bd9325c`, `5838408`) | — (manutenzione) |
-| S-01 | `test-suite-hygiene` | 0 | F-27, F-41, F-42 | completata il 29/09/2026: 6/6 task `verified`, da committare | `.walden/specs/test-suite-hygiene/` |
-| S-02 | `ci-quality-gates` | 0 | F-40, F-43, F-44, F-45 | da iniziare | — |
+| S-01 | `test-suite-hygiene` | 0 | F-27, F-41, F-42 | completata e committata (`bd4cf20`, `2e2621e`) | `.walden/specs/test-suite-hygiene/` |
+| S-02 | `ci-quality-gates` | 0 | F-40, F-43, F-44, F-45, F-51, F-52 | implementata il 30/09/2026 (task 1.1-7.2); 7.3-7.5 in attesa del push, della prima esecuzione settimanale e di Renovate | `.walden/specs/ci-quality-gates/` |
 | S-03 | `response-body-integrity` | 1 | F-01, F-07, F-10, F-50 | da iniziare | — |
 | S-04 | `request-body-forwarding` | 1 | F-02, F-03 | da iniziare | — |
 | S-05 | `websocket-proxy-security` | 1 | F-13, F-14 | da iniziare | — |
@@ -669,7 +672,7 @@ Per Walden sono manutenzioni che preservano il contratto: si verificano con i te
 | S-08 | `plugin-loading-hardening` | 2 | F-15, F-18, F-19, F-35 | da iniziare | — |
 | S-09 | `server-hardening` | 2 | F-08, F-16, F-21, F-34 | da iniziare | — |
 | S-10 | `deployment-supply-chain` | 2 | F-17, F-48 | da iniziare | — |
-| S-11 | `metrics-accuracy` | 3 | F-28, F-29, F-30, F-31 | da iniziare | — |
+| S-11 | `metrics-accuracy` | 3 | F-28, F-29, F-30, F-31, F-53 | da iniziare | — |
 | S-12 | `structured-logging` | 3 | F-20, F-32, F-33 | da iniziare | — |
 | S-13 | `config-validation` | 3 | F-36, F-37, F-38, F-39 | da iniziare | — |
 | S-14 | `plugin-architecture` | 4 | F-49 | da iniziare | — |
@@ -723,7 +726,7 @@ Le raccomandazioni sono proposte da confermare: ogni decisione si chiude nei req
 2. CLI: nel `PATH` c'è `walden` 0.10.4 (`~/go/bin`), in `~/.local/bin` c'è la 0.11.0. Sono entrambe compatibili, ma conviene usarne una sola per tutto il portfolio.
 3. `walden repo init`, poi compilare `.walden/constitution.md` con il contesto qui sotto.
 
-**Stato del bootstrap (29/09/2026)**: baseline committata; `walden repo init` eseguito con la CLI 0.11.0; constitution compilata con il contesto approvato; S-01 completata (6/6 task con evidenze `verified`).
+**Stato del bootstrap (29/09/2026)**: baseline committata; `walden repo init` eseguito con la CLI 0.11.0; constitution compilata con il contesto approvato; S-01 completata (6/6 task con evidenze `verified`). S-02 implementata il 30/09/2026: pipeline CI, target `make` equivalenti e harness di mutazione con 24 casi; restano le osservazioni su GitHub dopo il push.
 
 **Contesto per la constitution** (approvato il 29/09/2026 e applicato in `.walden/constitution.md`)
 

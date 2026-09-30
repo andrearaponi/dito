@@ -6,7 +6,8 @@
 # on UBI 8 so that the CGO-enabled binaries (required by Go plugins) link against
 # the same glibc as the ubi8-minimal runtime image.
 # Host binary and plugins MUST be built with the exact same toolchain.
-FROM --platform=linux/amd64 registry.access.redhat.com/ubi8/go-toolset:1.26 AS builder
+# Base images are pinned by tag and digest; Renovate proposes their updates.
+FROM --platform=linux/amd64 registry.access.redhat.com/ubi8/go-toolset:1.26.7@sha256:1439433a2cd76f0c20035001d46074e85a59ccd0d318a16023c3fd9fdd18ddf5 AS builder
 
 ENV GOTOOLCHAIN=go1.27.1 \
     GOPROXY=https://proxy.golang.org,direct \
@@ -35,7 +36,7 @@ ENV GOARCH=amd64
 RUN make build-plugin-signer build build-plugins
 
 # Production image - OpenShift compatible (AMD64)
-FROM --platform=linux/amd64 registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM --platform=linux/amd64 registry.access.redhat.com/ubi8/ubi-minimal:8.10@sha256:a2006dac3089997a79cb2d211a80ac59949d18f16e48bb89849fb96efabb970b
 
 # Install runtime dependencies
 RUN microdnf update -y && \

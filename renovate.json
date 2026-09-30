@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "S-02: grouped non-major updates, actions and images pinned by digest, host and plugin modules kept in step, verification tools from tools.mk.",
+  "extends": [
+    "config:recommended",
+    "group:allNonMajor",
+    "helpers:pinGitHubActionDigests",
+    "docker:pinDigests"
+  ],
+  "schedule": ["before 6am on monday"],
+  "postUpdateOptions": ["gomodTidyAll"],
+  "ignorePaths": ["**/testdata/**"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Verification tools pinned in tools.mk",
+      "managerFilePatterns": ["/(^|/)tools\\.mk$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[A-Z_]+_VERSION := (?<currentValue>\\S+)"
+      ]
+    }
+  ]
+}

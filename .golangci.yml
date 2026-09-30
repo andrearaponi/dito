@@ -1,0 +1,33 @@
+# golangci-lint v2 configuration (S-02).
+#
+# CI and `make lint` report only the issues introduced by a change
+# (--new-from-merge-base / --new-from-rev, passed by the Makefile): the
+# pre-existing debt does not block (R3.AC2). `make lint-all` shows everything.
+# The set focuses on correctness and security; it can grow once the legacy
+# code touched by the remediation specs has been cleaned up.
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - forcetypeassert
+    - gosec
+    - modernize
+    - nilerr
+    - noctx
+    - nolintlint
+
+formatters:
+  enable:
+    - gofmt
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

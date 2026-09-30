@@ -12,38 +12,24 @@ on:
       - ".walden/**"
       - ".github/workflows/validate-walden.yml"
 
+permissions:
+  contents: read
+
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.25"
+          go-version-file: go.mod
 
-      - name: Install walden
-        run: go install github.com/andrearaponi/walden/cmd/walden@v0.11.0
-
+      # The walden version is pinned in tools.mk, like every verification tool.
       - name: Validate Walden specs
-        run: |
-          set -euo pipefail
-          if [ ! -d .walden/specs ]; then
-            echo "No Walden specs directory found"
-            exit 0
-          fi
-
-          found=0
-          for dir in .walden/specs/*/; do
-            [ -d "$dir" ] || continue
-            found=1
-            feature="$(basename "$dir")"
-            echo "Validating ${feature}..."
-            walden validate "$feature" --all --json
-          done
-
-          if [ "$found" -eq 0 ]; then
-            echo "No Walden features to validate"
-          fi
+        run: make spec-validate

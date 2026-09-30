@@ -10,7 +10,8 @@
 
 ## Verification
 
-- [ ] `go test ./...`
+- [ ] `make ci`
+- [ ] `make image` (if the `Dockerfile` or the build changed)
 
 ## Notes
 
