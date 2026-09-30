@@ -6,7 +6,7 @@ This file captures stable project-wide context that applies across all features.
 
 Dito è un reverse proxy L7 scritto in Go, con plugin firmati (Ed25519), hot reload della configurazione, metriche Prometheus e supporto WebSocket, pensato per il deploy su Kubernetes/OpenShift. Serve operatori che espongono backend HTTP e sviluppatori che estendono il proxy con middleware.
 
-Il programma di remediation in corso è descritto in `SEPTEMBER-STATE.md`: finding `F-xx`, spec candidate `S-xx`, decisioni aperte `D-xx`, scenari di riproduzione `R-xx`.
+Il programma di remediation in corso è descritto in `SEPTEMBER-STATE.md`: finding `F-xx`, spec candidate `S-xx`, decisioni aperte `D-xx`, scenari di riproduzione `R-xx`. Dal 30/09/2026 è un documento di lavoro locale, non versionato e ignorato da git; l'ultima versione presente nel repository è quella del commit `c18a720`.
 
 ## Tech Stack
 
@@ -39,7 +39,7 @@ govulncheck ./...
 
 ## Key Files
 
-- `SEPTEMBER-STATE.md`: stato del progetto e PRD di remediation.
+- `SEPTEMBER-STATE.md` (locale, non versionato): stato del progetto e PRD di remediation.
 - `cmd/main.go`: avvio, caricamento dei plugin, server HTTP, shutdown.
 - `config/config.go`: schema della config, default, validazione, watcher dell'hot reload.
 - `handlers/handlers.go`: match delle location e reverse proxy.

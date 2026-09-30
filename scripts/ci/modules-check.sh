@@ -5,7 +5,7 @@
 #     same Go version;
 #   - modules linked into both the proxy binary and a plugin resolve to the
 #     same version: a mismatch is invisible to go build and go mod tidy, but
-#     makes plugin.Open fail at runtime (SEPTEMBER-STATE F-52). Only linked
+#     makes plugin.Open fail at runtime (F-52). Only linked
 #     modules count: test-only dependencies never reach plugin.Open.
 # Every check runs; the script fails at the end if any of them failed.
 set -uo pipefail
