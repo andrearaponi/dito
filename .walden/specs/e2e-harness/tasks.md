@@ -2,7 +2,7 @@
 walden_schema_version: v1alpha1
 status: approved
 approved_at: 2026-09-30T20:14:15Z
-last_modified: 2026-09-30T20:14:15Z
+last_modified: 2026-09-30T20:29:41Z
 approved_fingerprint: sha256:da14101a393ee58ac70c16bc4893e7be9efc4899d07803cc5c5e7112a702dd9f
 source_design_approved_at: 2026-09-30T20:03:50Z
 source_design_fingerprint: sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb
@@ -30,8 +30,8 @@ Note comuni a tutti i task:
 - **Sola lettura**: binari, plugin, chiavi e config temporanee stanno in directory temporanee fuori dal repository.
 - **Lint**: il codice nuovo passa `make lint`. Le soppressioni sono puntuali, nella forma `//nolint:<linter> // <motivo>`.
 
-- [ ] 1. Harness
-  - [ ] 1.1 Catena condivisa `handlers.NewHandler`
+- [x] 1. Harness
+  - [x] 1.1 Catena condivisa `handlers.NewHandler`
     - `NewHandler(dito, plugins) http.Handler` restituisce il `mux` con `"/"` → `LoggingMiddleware(DynamicProxyHandler)`. `cmd/main.go` la usa al posto del `mux` costruito sul posto; il comportamento non cambia.
     - Prima `TestNewHandler`: una richiesta attraverso `NewHandler` arriva a un backend `httptest` e il client riceve il suo body.
     - Requirements: `C2`
@@ -41,7 +41,7 @@ Note comuni a tutti i task:
         expect_output: "--- PASS: TestNewHandler"
       - command: ["make", "build-check"]
         expect_output: "build-check: ok"
-  - [ ] 1.2 `Run`, bug noti, riepilogo e `make e2e`
+  - [x] 1.2 `Run`, bug noti, riepilogo e `make e2e`
     - `scripts/ci/expect-output.sh`, target `make e2e` (`go test -count=1 -race -shuffle=on -v ./e2e/`, con `SCENARIO` passato a `-run`), package `e2e`:
       - `Run`, `S`, `KnownBug`;
       - registro dei risultati e riepilogo in `TestMain`;
@@ -65,7 +65,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R4.AC1", "R4.AC2", "R4.AC3", "R4.AC4", "R2.AC8"]
         timeout: 20m
-  - [ ] 1.3 Backend, client e osservazioni
+  - [x] 1.3 Backend, client e osservazioni
     - Backend `httptest` che registrano le richieste e servono body deterministici. Client con framing, `1xx`, hash in streaming, tempi di arrivo e interruzioni. Client WebSocket.
     - Prima i test dell'harness, eseguiti direttamente contro i backend:
       - un body da 64 MiB confrontato per hash;
@@ -82,7 +82,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R2.AC1", "R2.AC2", "R2.AC3", "R2.AC4", "R2.AC5", "R2.AC6"]
         timeout: 20m
-  - [ ] 1.4 Proxy in-process
+  - [x] 1.4 Proxy in-process
     - Template della config (`{{backend "nome"}}`, `{{ws "nome"}}`, `{{ca "nome"}}`, `{{clientCert}}`, `{{clientKey}}`), caricamento con `config.LoadConfiguration`, logger catturato, plugin finti, catena di `handlers.NewHandler` servita da `httptest`.
     - Prima i test dell'harness:
       - una location inoltra al backend dello scenario;
@@ -95,7 +95,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R1.AC2", "R2.AC7"]
         timeout: 20m
-  - [ ] 1.5 Binario
+  - [x] 1.5 Binario
     - Build unica per processo di test (proxy normale e `-race`, `plugin-signer`, plugin) con `GOTOOLCHAIN=go<versione di go.mod>`. Porta libera con al più tre tentativi, attesa della prontezza, log catturati, arresto con `SIGTERM` e poi `SIGKILL`. `TestMain` fallisce se resta un processo figlio.
     - Prima i test dell'harness:
       - lo stesso scenario dà lo stesso esito in-process e con il binario;

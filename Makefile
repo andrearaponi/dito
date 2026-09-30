@@ -424,7 +424,7 @@ logs-ocp:
 # and every target prints "<target>: ok" only when all its checks pass.
 # ---------------------------------------------------------------------------
 
-.PHONY: ci tools-check ci-selftest build-check modules test-race test-hermetic image lint lint-all vuln smoke-plugins coverage workflows spec-validate
+.PHONY: ci tools-check ci-selftest build-check modules test-race test-hermetic image lint lint-all vuln smoke-plugins coverage workflows spec-validate e2e
 
 # tools-check: Verifies tool versions (tools.mk) and the Go that builds them (go.mod).
 tools-check:
@@ -544,3 +544,8 @@ ci:
 	@$(MAKE) --no-print-directory smoke-plugins
 	@$(MAKE) --no-print-directory workflows
 	@echo "ci: ok"
+
+# e2e: End-to-end scenarios of the proxy (e2e/), with the race detector and in random order.
+# SCENARIO=<regex> selects scenarios or areas, for example SCENARIO=^TestLimits_ or SCENARIO=_R05_.
+e2e:
+	@go test -count=1 -race -shuffle=on -v $(if $(SCENARIO),-run '$(SCENARIO)') ./e2e/
