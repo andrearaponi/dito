@@ -60,6 +60,10 @@ func TestUpdateActiveConnections(t *testing.T) {
 
 // TestExposeMetricsHandler tests the ExposeMetricsHandler function for exposing metrics via HTTP.
 func TestExposeMetricsHandler(t *testing.T) {
+	// A CounterVec appears in the exposition only after its first observation:
+	// record one here instead of relying on another test running first.
+	RecordRequest("GET", "/exposed", http.StatusOK, 0.01)
+
 	req, _ := http.NewRequest("GET", "/metrics", nil)
 	rr := httptest.NewRecorder()
 	handler := ExposeMetricsHandler()
