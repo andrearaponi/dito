@@ -2,7 +2,7 @@
 walden_schema_version: v1alpha1
 status: approved
 approved_at: 2026-09-30T20:14:15Z
-last_modified: 2026-09-30T20:29:41Z
+last_modified: 2026-09-30T20:46:36Z
 approved_fingerprint: sha256:da14101a393ee58ac70c16bc4893e7be9efc4899d07803cc5c5e7112a702dd9f
 source_design_approved_at: 2026-09-30T20:03:50Z
 source_design_fingerprint: sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb
@@ -115,8 +115,8 @@ Note comuni a tutti i task:
         covers: ["R1.AC5"]
         timeout: 30m
 
-- [ ] 2. Catalogo degli scenari
-  - [ ] 2.1 Routing
+- [x] 2. Catalogo degli scenari
+  - [x] 2.1 Routing
     - Scenari: `TestRouting_RegexMatch`, `TestRouting_NoLocation404`, `TestRouting_FirstLocationWins`, `TestRouting_ReplacePathTrue`, `TestRouting_R05_ReplacePathFalse`, `TestRouting_QueryPreserved`. Previsto: F-04 per `R-05` (verificato).
     - Requirements: `R3.AC1`
     - Design: Architecture (Catalogo iniziale)
@@ -125,7 +125,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC1"]
         timeout: 20m
-  - [ ] 2.2 Header
+  - [x] 2.2 Header
     - Scenari: `TestHeaders_R06_XForwarded`, `TestHeaders_HostRewritten`, `TestHeaders_RequestIDGenerated`, `TestHeaders_RequestIDPropagated`, `TestHeaders_HopByHopRemoved`, `TestHeaders_AdditionalHeaders`, `TestHeaders_ExcludedHeaders`, `TestHeaders_ExcludedHeadersCaseInsensitive`, `TestHeaders_SecurityHeaders`. Previsti: F-05 per `R-06` (verificato), F-12 per `excluded_headers` senza distinzione di maiuscole (da verificare).
     - Requirements: `R3.AC2`
     - Design: Architecture (Catalogo iniziale)
@@ -134,7 +134,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC2"]
         timeout: 20m
-  - [ ] 2.3 Body della richiesta
+  - [x] 2.3 Body della richiesta
     - Scenari: `TestRequestBody_JSONIntact`, `TestRequestBody_R02_FormPost`, `TestRequestBody_R03_MalformedQuery`, `TestRequestBody_LimitWithContentLength`, `TestRequestBody_R04_LimitChunked`, `TestRequestBody_LargeUnderLimit`. Previsti e verificati: F-02 per `R-02` e `R-03`, F-03 per `R-04`.
     - Requirements: `R3.AC3`
     - Design: Architecture (Catalogo iniziale)
@@ -143,7 +143,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC3"]
         timeout: 20m
-  - [ ] 2.4 Body della risposta
+  - [x] 2.4 Body della risposta
     - Scenari: `TestResponseBody_Empty`, `TestResponseBody_OneByte`, `TestResponseBody_StatusWithEmptyBody`, `TestResponseBody_R01_P01_LargeWithContentLength`, `TestResponseBody_P02_LargeChunked`, `TestResponseBody_P05_HeadOverLimit`, `TestResponseBody_NotModifiedOverLimit`, `TestResponseBody_P06_EarlyHintsForwarded`, `TestResponseBody_P06_FinalStatusAfterEarlyHints`, `TestResponseBody_P07_ServerSentEvents`, `TestResponseBody_P10_MemoryBounded`, `TestResponseBody_P11_BackendAbortsBody`.
     - Verificati: F-01 (`R-01`, P2, P7, P10), F-55 (P5), F-56 (P6: `103`), status finale corretto dopo il `103`, interruzione visibile al client (P11).
     - Da verificare: `304` oltre il limite (previsto F-55) e status con body vuoto.
@@ -154,7 +154,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC4"]
         timeout: 20m
-  - [ ] 2.5 Limiti di risposta
+  - [x] 2.5 Limiti di risposta
     - Scenari: `TestLimits_P03_DeclaredOverLimit`, `TestLimits_P04_OverLimitAfterStart`, `TestLimits_P09_ErrorJSONForAnyPath`, `TestLimits_P12_FirstChunkOverLimit`, `TestLimits_LocationLimitOverridesGlobal`, `TestLimits_GlobalLimitWithoutLocationLimit`, `TestLimits_WarningLogged`. Verificati: F-54 (P3, P12), F-01 (P4: risposta troncata che sembra completa). Previsti: F-54 per limiti di location e globale, F-54 e F-07 per P9.
     - Requirements: `R3.AC5`
     - Design: Architecture (Catalogo iniziale)
@@ -163,7 +163,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC5"]
         timeout: 20m
-  - [ ] 2.6 Errori verso il backend
+  - [x] 2.6 Errori verso il backend
     - Scenari: `TestErrors_BackendUnreachable`, `TestErrors_BackendTimeout`, `TestErrors_InvalidTarget`, `TestErrors_ClientCancels`. Esiti da verificare.
     - Requirements: `R3.AC6`
     - Design: Architecture (Catalogo iniziale)
@@ -172,7 +172,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC6"]
         timeout: 20m
-  - [ ] 2.7 Plugin e middleware
+  - [x] 2.7 Plugin e middleware
     - Scenari: `TestPlugins_MiddlewareOrder`, `TestPlugins_CriticalMiddlewareMissing`, `TestPlugins_SignedPluginLoaded`, `TestPlugins_TamperedPluginRejected`. Verificati dallo smoke e da `make ci-selftest` di S-02: plugin firmato caricato, plugin manomesso rifiutato.
     - Requirements: `R3.AC7`, `C4`
     - Design: Architecture (Catalogo iniziale, Binario)
@@ -181,7 +181,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC7"]
         timeout: 20m
-  - [ ] 2.8 WebSocket
+  - [x] 2.8 WebSocket
     - Scenario `TestWebSocket_Echo` verso un backend `ws` (verificato: l'echo passa, R-07). Gli scenari di sicurezza restano fuori (`C6`).
     - Requirements: `R3.AC8`, `C6`
     - Design: Architecture (Catalogo iniziale)
@@ -190,7 +190,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC8"]
         timeout: 20m
-  - [ ] 2.9 Transport e TLS verso i backend
+  - [x] 2.9 Transport e TLS verso i backend
     - Scenari: `TestTransport_HTTPSBackendCustomCA`, `TestTransport_MutualTLS`, `TestTransport_LocationOverridesGlobal`, con certificati generati durante il test (`certs_test.go`). Esiti da verificare.
     - Requirements: `R3.AC9`
     - Design: Architecture (Catalogo iniziale)
@@ -199,7 +199,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC9"]
         timeout: 20m
-  - [ ] 2.10 Hot reload (binario)
+  - [x] 2.10 Hot reload (binario)
     - Scenari: `TestReload_NewLocationServed`, `TestReload_R10_RevertDetected`, `TestReload_R09_ConcurrentRequestsRace`. `R-10` cambia il target di una location da A a B e poi di nuovo ad A. `R-09` usa il binario `-race` con client concorrenti e al più tre reload.
     - Previsti: F-24 e F-23, verificati in-process durante l'assessment. Col binario vanno verificati, quindi la proof non li afferma.
     - Requirements: `R3.AC10`
@@ -209,7 +209,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC10"]
         timeout: 20m
-  - [ ] 2.11 Metriche
+  - [x] 2.11 Metriche
     - Scenari: `TestMetrics_EndpointExposed`, `TestMetrics_R08_CountersPerRequest`, con i contatori confrontati per differenza. Verificati: endpoint esposto (smoke di S-02), F-28 per `R-08`.
     - Requirements: `R3.AC11`
     - Design: Architecture (Osservazioni)
@@ -218,7 +218,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC11"]
         timeout: 20m
-  - [ ] 2.12 Logging
+  - [x] 2.12 Logging
     - Scenari: `TestLogging_CompactAccessLog`, `TestLogging_R11_Disabled`, `TestLogging_R12_Verbose`. Verificato: F-32 per `R-11` e `R-12`.
     - Requirements: `R3.AC12`
     - Design: Architecture (Osservazioni)
@@ -227,7 +227,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC12"]
         timeout: 20m
-  - [ ] 2.13 Ciclo di vita (binario)
+  - [x] 2.13 Ciclo di vita (binario)
     - Scenari: `TestLifecycle_R13_StartWithoutPlugins`, `TestLifecycle_GracefulShutdown`, `TestLifecycle_R14_LargeResponseThroughBinary`. Verificati: F-35 per `R-13`, F-01 per `R-14`.
     - Requirements: `R3.AC13`
     - Design: Architecture (Binario)
@@ -236,7 +236,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC13"]
         timeout: 20m
-  - [ ] 2.14 Tracciabilità del catalogo
+  - [x] 2.14 Tracciabilità del catalogo
     - `go test -list` contiene gli ID `R-01`…`R-14` tranne `R-07` (`C6`) e le sonde citate in `R3.AC4` e `R3.AC5`.
     - Requirements: `R3.AC14`, `C6`
     - Design: Architecture, Verification Plan

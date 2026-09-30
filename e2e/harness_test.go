@@ -158,11 +158,18 @@ func (s *S) logDiagnostics() {
 // summarizeFailure condenses a testify failure message to its useful lines.
 func summarizeFailure(msg string) string {
 	var parts []string
+	continuation := false
 	for line := range strings.SplitSeq(msg, "\n") {
 		line = strings.TrimSpace(line)
+		if continuation && line != "" && !hasTestifyLabel(line) {
+			// testify prints the value of "Received unexpected error:" on the next line.
+			parts[len(parts)-1] += " " + strings.Join(strings.Fields(line), " ")
+		}
+		continuation = false
 		for _, key := range []string{"Error:", "expected", "actual", "Messages:"} {
 			if strings.HasPrefix(line, key) {
 				parts = append(parts, strings.Join(strings.Fields(line), " "))
+				continuation = key == "Error:" && strings.HasSuffix(line, ":")
 				break
 			}
 		}
@@ -175,6 +182,16 @@ func summarizeFailure(msg string) string {
 		out = out[:400] + "..."
 	}
 	return out
+}
+
+// hasTestifyLabel reports whether line starts a new field of a testify message.
+func hasTestifyLabel(line string) bool {
+	for _, label := range []string{"Error Trace:", "Error:", "Test:", "Messages:", "Diff:", "expected", "actual"} {
+		if strings.HasPrefix(line, label) {
+			return true
+		}
+	}
+	return false
 }
 
 func quoteAll(ids []string) string {

@@ -30,7 +30,13 @@ type Proxy struct {
 	ConfigPath string
 	Logs       *LogBuffer
 
-	proc *process // binary only
+	// binary only
+	proc           *process
+	opts           *proxyOptions
+	port           string
+	pluginsSection string
+	startedAt      time.Time
+	lastMtime      time.Time
 }
 
 // ProxyOption adjusts the configuration of a proxy.

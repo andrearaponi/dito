@@ -4,12 +4,15 @@ package e2e
 // and handlers that produce the responses the scenarios need.
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"hash"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -49,7 +52,19 @@ type Backend struct {
 // BackendOption configures a backend.
 type BackendOption func(*backendConfig)
 
-type backendConfig struct{}
+type backendConfig struct {
+	tls        bool
+	clientAuth bool
+}
+
+// WithTLS serves the backend over HTTPS with a certificate of the run CA.
+func WithTLS() BackendOption { return func(c *backendConfig) { c.tls = true } }
+
+// WithClientAuth serves over HTTPS and requires a client certificate of the
+// run CA (mutual TLS).
+func WithClientAuth() BackendOption {
+	return func(c *backendConfig) { c.tls, c.clientAuth = true, true }
+}
 
 // Backend starts a backend named name that serves h and records its requests.
 func (s *S) Backend(name string, h http.Handler, opts ...BackendOption) *Backend {
@@ -62,7 +77,17 @@ func (s *S) Backend(name string, h http.Handler, opts ...BackendOption) *Backend
 		opt(&cfg)
 	}
 	b := &Backend{Name: name}
-	b.server = httptest.NewServer(b.record(h))
+	b.server = httptest.NewUnstartedServer(b.record(h))
+	if cfg.tls {
+		tlsConfig, err := serverTLSConfig(cfg.clientAuth)
+		if err != nil {
+			s.Fatalf("backend %s TLS: %v", name, err)
+		}
+		b.server.TLS = tlsConfig
+		b.server.StartTLS()
+	} else {
+		b.server.Start()
+	}
 	b.URL = b.server.URL
 	s.Cleanup(func() {
 		b.server.CloseClientConnections()
@@ -300,4 +325,63 @@ func wsURL(u string) string {
 		return "wss://" + rest
 	}
 	return "ws://" + strings.TrimPrefix(u, "http://")
+}
+
+// text answers every request with body.
+func text(body string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, body)
+	})
+}
+
+// RawBackend starts a TCP backend that answers every request with the raw
+// bytes of response: it produces responses net/http would not send, such as
+// a 304 with Content-Length. It records method, path, query and headers.
+func (s *S) RawBackend(name, response string) *Backend {
+	s.t.Helper()
+	var lc net.ListenConfig
+	l, err := lc.Listen(context.Background(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		s.Fatalf("raw backend %s: %v", name, err)
+	}
+	b := &Backend{Name: name, URL: "http://" + l.Addr().String()}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			conn, err := l.Accept()
+			if err != nil {
+				return
+			}
+			go b.serveRaw(conn, response)
+		}
+	}()
+	s.Cleanup(func() {
+		_ = l.Close()
+		<-done
+	})
+	if s.backends == nil {
+		s.backends = map[string]*Backend{}
+	}
+	s.backends[name] = b
+	s.diagnosers = append(s.diagnosers, b.describe)
+	return b
+}
+
+func (b *Backend) serveRaw(conn net.Conn, response string) {
+	defer func() { _ = conn.Close() }()
+	_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
+	req, err := http.ReadRequest(bufio.NewReader(conn))
+	if err != nil {
+		return
+	}
+	var d bodyDigest
+	_, _ = io.Copy(&d, req.Body)
+	b.mu.Lock()
+	b.requests = append(b.requests, RecordedRequest{
+		Method: req.Method, Path: req.URL.Path, RawQuery: req.URL.RawQuery, Host: req.Host,
+		Proto: req.Proto, Header: req.Header, BodyLen: d.n, BodySHA256: d.sum(),
+	})
+	b.mu.Unlock()
+	_, _ = io.WriteString(conn, response)
 }

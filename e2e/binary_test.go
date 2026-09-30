@@ -111,6 +111,7 @@ func (s *S) startBinary(locations string, o *proxyOptions) (*Proxy, error) {
 		p := &Proxy{
 			Name: "binary proxy", URL: "http://127.0.0.1:" + portText,
 			ConfigText: text, ConfigPath: path, Logs: logs, proc: proc,
+			opts: o, port: portText, pluginsSection: pluginsSection, startedAt: time.Now(),
 		}
 		if lastErr = waitReady(p); lastErr == nil {
 			return p, nil
@@ -154,6 +155,38 @@ func (s *S) preparePlugins(work string, o *proxyOptions) string {
 	}
 	return fmt.Sprintf("plugins:\n  directory: %q\n  public_key_path: %q\n  public_key_hash: %q\n",
 		dir, filepath.Join(keys, "ed25519_public.key"), hash)
+}
+
+// watcherFirstCheck is when the configuration watcher of the binary has
+// read the file once: it polls every 2 s, waits 1 s, and ignores the first
+// read, so an earlier change would never be applied.
+const watcherFirstCheck = 3500 * time.Millisecond
+
+// Reload rewrites the configuration of a binary proxy started with
+// WithHotReload, with new locations and the same options, port and plugins.
+// Its modification time always moves forward, so the watcher detects it.
+func (s *S) Reload(p *Proxy, locations string) {
+	s.t.Helper()
+	if p.proc == nil || !p.opts.hotReload {
+		s.Fatalf("Reload needs a binary proxy started with WithHotReload")
+	}
+	if wait := watcherFirstCheck - time.Since(p.startedAt); wait > 0 {
+		time.Sleep(wait)
+	}
+	text := s.renderConfig(p.opts.configText(locations, p.port, p.pluginsSection), p.port)
+	if err := os.WriteFile(p.ConfigPath, []byte(text), 0o600); err != nil {
+		s.Fatalf("reload: %v", err)
+	}
+	mtime := time.Now()
+	if !mtime.After(p.lastMtime) {
+		mtime = p.lastMtime.Add(time.Second)
+	}
+	if err := os.Chtimes(p.ConfigPath, mtime, mtime); err != nil {
+		s.Fatalf("reload: %v", err)
+	}
+	p.lastMtime = mtime
+	p.ConfigText = text
+	s.Logf("RELOAD %s", p.ConfigPath)
 }
 
 func waitReady(p *Proxy) error {
