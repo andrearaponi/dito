@@ -2,7 +2,7 @@
 walden_schema_version: v1alpha1
 status: approved
 approved_at: 2026-09-30T07:27:08Z
-last_modified: 2026-09-30T08:02:13Z
+last_modified: 2026-09-30T17:34:09Z
 approved_fingerprint: sha256:b5c8254076762051a910cdc412de5d69916f55ee064ddb69b334af9e26218efe
 source_design_approved_at: 2026-09-30T07:00:40Z
 source_design_fingerprint: sha256:3d9aa995ab487513125606401422d095b83b782bd3c3abd58399dbba5acc78aa
@@ -292,7 +292,7 @@ Note comuni a tutti i task:
         expect_output: "selftest summary: 24 ok, 0 failed"
         covers: ["R2.AC1", "R2.AC2", "R2.AC3", "R2.AC4", "R2.AC5", "R2.AC6", "R3.AC1", "R3.AC2", "R3.AC3", "R4.AC1", "R4.AC2", "R5.AC2", "R5.AC3", "R6.AC3"]
         timeout: 90m
-  - [ ] 7.3 Esecuzioni su GitHub dopo il push
+  - [x] 7.3 Esecuzioni su GitHub dopo il push
     - Da completare dopo che l'owner ha pubblicato il branch, aperto la PR e fatto il merge. `scripts/ci/observe-github.sh runs` verifica:
       - che le ultime esecuzioni di `ci.yml` per una PR verso `main` e per un push su `main` siano riuscite;
       - che durino al massimo 15 minuti;

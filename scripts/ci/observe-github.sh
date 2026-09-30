@@ -55,8 +55,13 @@ case "$mode" in
 runs)
 	check_run "a pull request" pull_request
 	check_run "a push to main" push main
-	gh run view "$last_run_id" --log 2>/dev/null | grep -q "tools-check: ok (go$go_version)" ||
-		fail "the push run $last_run_id did not report tools-check with go$go_version"
+	# Match on the captured log: piping it into grep -q under pipefail fails
+	# with SIGPIPE (exit 141) whenever grep stops reading at the first match.
+	run_log=$(gh run view "$last_run_id" --log 2>/dev/null) || fail "cannot download the log of run $last_run_id"
+	case "$run_log" in
+	*"tools-check: ok (go$go_version)"*) ;;
+	*) fail "the push run $last_run_id did not report tools-check with go$go_version" ;;
+	esac
 	echo "observe runs: ok"
 	;;
 schedule)
