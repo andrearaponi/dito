@@ -543,7 +543,7 @@ func (rli *responseLimitInterceptor) flushBuffer() {
 	rli.headerWritten = true
 
 	// Restore original headers to the underlying response writer
-	maps.Copy(rli.ResponseWriter.Header(), rli.originalHeaders)
+	maps.Copy(rli.Header(), rli.originalHeaders)
 
 	// If we have buffered content, set proper Content-Length to avoid chunking
 	if rli.buffer.Len() > 0 {
