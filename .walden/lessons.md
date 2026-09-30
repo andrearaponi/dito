@@ -20,3 +20,8 @@ Review this file before non-trivial work when the current request matches past m
 - Lesson: Under pipefail, 'producer | grep -q' is a false negative whenever the producer writes more than a pipe buffer after the match; scripts that can only run after a push were never exercised on real data before their proof.
 - Guardrail: In pipefail scripts match against a captured variable or file (case, grep FILE), never 'large-producer | grep -q'; exercise post-push observation scripts against a real or recorded run log before relying on their proof.
 
+### 2026-09-30T18:21:20Z | ci-quality-gates | release
+- Trigger: After committing the SEPTEMBER-STATE.md removal, S-01 and S-02 evidence turned stale-code although no file content changed: walden verify had run while the removal was only staged (git rm --cached, file still on disk and ignored).
+- Lesson: Walden's code identity treats a file that is still in HEAD as tracked even if it was removed from the index and is now ignored: verifying before committing a removal records an identity that the commit invalidates (reproduced: staged-only removal gives the pre-removal identity, the committed removal a new one).
+- Guardrail: Commit a removal of tracked files (or any change of what git tracks) before the final walden verify; then verify on the committed state and commit only the evidence.
+
