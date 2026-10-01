@@ -58,7 +58,11 @@ type proxyOptions struct {
 	tamper     bool // binary only: alter the plugin after signing it
 }
 
+// defaultTransport keeps enough idle connections per backend for the
+// concurrent scenarios, so the proxy reuses them instead of opening new ones.
 const defaultTransport = `idle_conn_timeout: 5s
+max_idle_conns: 256
+max_idle_conns_per_host: 64
 dial_timeout: 2s
 response_header_timeout: 10s`
 

@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"slices"
 	"strings"
@@ -71,11 +72,20 @@ func TestReload_R09_ConcurrentRequestsRace(t *testing.T) {
 		}
 		p := s.Binary(locations(0), WithHotReload(), WithRaceDetector())
 
+		// Dense traffic, needed to catch the race in every run, on a few
+		// reused connections: reading each body lets the connection be
+		// reused, so the loop does not leave a socket in TIME_WAIT per
+		// request (thousands per run would exhaust the ephemeral ports and
+		// break unrelated scenarios).
 		stop := make(chan struct{})
 		var clients sync.WaitGroup
+		client := &http.Client{
+			Timeout:   2 * time.Second,
+			Transport: &http.Transport{MaxIdleConnsPerHost: 8},
+		}
+		defer client.CloseIdleConnections()
 		for range 4 {
 			clients.Go(func() {
-				client := &http.Client{Timeout: 2 * time.Second}
 				for {
 					select {
 					case <-stop:
@@ -84,6 +94,7 @@ func TestReload_R09_ConcurrentRequestsRace(t *testing.T) {
 					}
 					req := s.NewRequest(http.MethodGet, p.URL+"/t", nil)
 					if resp, err := client.Do(req); err == nil {
+						_, _ = io.Copy(io.Discard, resp.Body)
 						_ = resp.Body.Close()
 					}
 				}
