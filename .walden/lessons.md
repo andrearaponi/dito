@@ -35,3 +35,13 @@ Review this file before non-trivial work when the current request matches past m
 - Lesson: A known-bug scenario on racy code can pass by chance, and with strict expected failures that makes the suite flaky; each marked scenario must reproduce its bug in every timing branch.
 - Guardrail: For each marked scenario, check that the bug shows in every branch of the broken code; if it depends on timing, repeat the exchange (bounded, e.g. 20 times) and fail on the first bad response; run the whole suite several times before closing the catalog.
 
+### 2026-09-30T21:18:44Z | e2e-harness | execute
+- Trigger: Checkpoint 4.1 failed in make ci-selftest: S-02's coverage-package-removed deletes cmd/plugin-signer and expects make coverage to pass, but make coverage now also runs the e2e suite, which builds cmd/plugin-signer.
+- Lesson: When a CI target gains a step, the existing mutation cases of that target can lose their isolation: their assumptions about what a mutation leaves intact may no longer hold.
+- Guardrail: When extending a make target used by make ci-selftest, run all its cases (not only the new ones) and give cases that test one step a variable to skip the unrelated steps (here COVERAGE_E2E=no).
+
+### 2026-10-01T08:03:31Z | e2e-harness | execute
+- Trigger: walden verify of S-15 failed at task 3.2 (a full make e2e failed, output discarded by the proof's warm-up run); under load, unrelated scenarios failed with 'connect: can't assign requested address': R-09's request loop closed unread bodies, opening a connection per request and leaving about 5000 sockets in TIME_WAIT per run.
+- Lesson: Traffic loops in tests must reuse connections (read every body, pooled transport): connection churn exhausts the ephemeral ports (about 16k on macOS, TIME_WAIT about 30 s) across consecutive runs and fails unrelated scenarios. Throttling instead of reusing made the racy known bug miss its race.
+- Guardrail: In load or race scenarios, drain response bodies and share a transport with enough idle connections; count TIME_WAIT sockets before and after the scenario; stress the suite with parallel repeated runs before relying on it. Proofs must not discard the output of a step that can fail.
+

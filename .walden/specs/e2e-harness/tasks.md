@@ -1,9 +1,9 @@
 ---
 walden_schema_version: v1alpha1
 status: approved
-approved_at: 2026-09-30T20:14:15Z
-last_modified: 2026-09-30T20:46:36Z
-approved_fingerprint: sha256:da14101a393ee58ac70c16bc4893e7be9efc4899d07803cc5c5e7112a702dd9f
+approved_at: 2026-10-01T07:07:24Z
+last_modified: 2026-10-01T07:07:24Z
+approved_fingerprint: sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91
 source_design_approved_at: 2026-09-30T20:03:50Z
 source_design_fingerprint: sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb
 ---
@@ -245,8 +245,8 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R3.AC14"]
 
-- [ ] 3. Integrazione
-  - [ ] 3.1 Suite nei controlli esistenti
+- [x] 3. Integrazione
+  - [x] 3.1 Suite nei controlli esistenti
     - `test-race`, `test-hermetic` e `coverage` eseguono i package unitari come oggi e poi `./e2e/` con `-v`, in un'invocazione separata. `test-hermetic` scarica prima, fuori dall'isolamento, anche le dipendenze del modulo del plugin.
     - Requirements: `R5.AC3`, `R5.AC4`, `NFR1`
     - Design: Architecture (Esecuzione), Failure Modes And Tradeoffs
@@ -262,7 +262,7 @@ Note comuni a tutti i task:
       - command: ["scripts/ci/expect-output.sh", "--contains", "e2e summary:", "--contains", "coverage: ok", "--", "make", "coverage"]
         expect_output: "expect-output: ok"
         timeout: 30m
-  - [ ] 3.2 `make e2e`: filtro e durata
+  - [x] 3.2 `make e2e`: filtro e durata
     - Il filtro `SCENARIO` esegue solo l'area richiesta. L'intera suite termina in al più 120 s con la cache calda.
     - Requirements: `R5.AC1`, `R5.AC2`, `NFR2`
     - Design: Architecture (Esecuzione), Verification Plan
@@ -275,7 +275,7 @@ Note comuni a tutti i task:
         expect_output: "e2e duration"
         covers: ["R5.AC1"]
         timeout: 20m
-  - [ ] 3.3 Casi di `make ci-selftest`
+  - [x] 3.3 Casi di `make ci-selftest`
     - Due casi nuovi in `scripts/ci/selftest.sh`:
       - `e2e-regression`: toglie `req.Host = targetURL.Host` da `createDirector` e verifica che `make test-race` fallisca citando `TestHeaders_HostRewritten`;
       - `e2e-new-scenario`: aggiunge soltanto `e2e/zz_selftest_scenario_test.go`, con uno scenario che fallisce, e verifica che `make e2e` fallisca citandolo.
@@ -286,7 +286,7 @@ Note comuni a tutti i task:
         expect_output: "selftest summary: 2 ok, 0 failed"
         covers: ["R5.AC5", "R6.AC1"]
         timeout: 40m
-  - [ ] 3.4 Modo `e2e` di `observe-github.sh`
+  - [x] 3.4 Modo `e2e` di `observe-github.sh`
     - `observe-github.sh e2e` legge i log dell'ultima esecuzione di `ci.yml` per una PR e verifica che i job `test`, `hermetic` e `coverage` contengano il riepilogo della suite. Confronta il log catturato, senza `grep -q` in pipeline (lezione registrata). La verifica reale avviene dopo il push (4.2).
     - Requirements: `R5.AC3`
     - Design: Verification Plan
@@ -294,7 +294,7 @@ Note comuni a tutti i task:
       - command: ["scripts/ci/observe-github.sh", "bogus"]
         expect_exit: 2
         expect_output: "runs|schedule|renovate|e2e"
-  - [ ] 3.5 README e PRD locale
+  - [x] 3.5 README e PRD locale
     - Sezione del README sugli scenari end-to-end: come scriverne uno, eseguirlo (`make e2e`, `SCENARIO`) e marcare o togliere un bug noto, con un esempio completo.
     - Registrazione di F-54, F-55, F-56 e degli eventuali finding nuovi nel PRD locale. Il PRD non è versionato, quindi nessuna proof lo verifica.
     - Requirements: `R6.AC2`
@@ -305,8 +305,10 @@ Note comuni a tutti i task:
         covers: ["R6.AC2"]
 
 - [ ] 4. Chiusura
-  - [ ] 4.1 Checkpoint locale completo
+  - [x] 4.1 Checkpoint locale completo
     - `make ci`, l'harness di mutazione completo (24 casi di S-02 più i 2 nuovi) e 10 esecuzioni consecutive della suite in ordine casuale.
+
+      Revisione del 30/09/2026: la proof dell'harness non fissa il numero totale dei casi (`ok, 0 failed`), così le spec successive possono aggiungerne senza rompere questa proof; `make ci-selftest` esce con errore se un solo caso fallisce.
     - Requirements: `R5.AC4`, `NFR2`, `NFR3`
     - Design: Verification Plan
     - Verification:
@@ -314,7 +316,7 @@ Note comuni a tutti i task:
         expect_output: "ci: ok"
         timeout: 60m
       - command: ["make", "ci-selftest"]
-        expect_output: "selftest summary: 26 ok, 0 failed"
+        expect_output: "ok, 0 failed"
         timeout: 90m
       - command: ["scripts/ci/expect-output.sh", "--contains", "e2e summary:", "--absent", "--- FAIL", "--", "env", "GOTOOLCHAIN=auto", "go", "test", "-count=10", "-shuffle=on", "-v", "./e2e/"]
         expect_output: "expect-output: ok"
