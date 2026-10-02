@@ -1452,6 +1452,43 @@
       ],
       "result": "passed",
       "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "4.2": {
+      "task_fingerprint": "sha256:320f56e2ba3a820a307b492ac091dccf28d15f8eff170b0e1bce34cffdb92955",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "complete",
+        "policy": "completion-post-state/v1",
+        "assertion_result": "passed",
+        "integrity": "post-state",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin26.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.69.0\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/observe-github.sh",
+            "e2e"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:c033ac18b42cc80c732e6386fb5937db4ffc6cfbd3ef3b7b6dc1fc3b9504136d"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-02T06:08:36Z"
     }
   }
 }

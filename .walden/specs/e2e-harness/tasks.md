@@ -2,7 +2,7 @@
 walden_schema_version: v1alpha1
 status: approved
 approved_at: 2026-10-01T07:07:24Z
-last_modified: 2026-10-01T07:07:24Z
+last_modified: 2026-10-02T06:08:36Z
 approved_fingerprint: sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91
 source_design_approved_at: 2026-09-30T20:03:50Z
 source_design_fingerprint: sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb
@@ -304,7 +304,7 @@ Note comuni a tutti i task:
       - command: ["grep", "-q", "KnownBug(", "README.md"]
         covers: ["R6.AC2"]
 
-- [ ] 4. Chiusura
+- [x] 4. Chiusura
   - [x] 4.1 Checkpoint locale completo
     - `make ci`, l'harness di mutazione completo (24 casi di S-02 più i 2 nuovi) e 10 esecuzioni consecutive della suite in ordine casuale.
 
@@ -322,7 +322,7 @@ Note comuni a tutti i task:
         expect_output: "expect-output: ok"
         covers: ["R5.AC4"]
         timeout: 90m
-  - [ ] 4.2 Osservazione su GitHub
+  - [x] 4.2 Osservazione su GitHub
     - Da completare dopo il push e la PR verso `main`: `observe-github.sh e2e` sull'esecuzione della PR.
     - Requirements: `R5.AC3`
     - Design: Verification Plan
