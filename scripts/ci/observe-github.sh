@@ -2,13 +2,15 @@
 # Observes the CI pipeline on GitHub after the branch has been pushed
 # (S-02, tasks 7.3-7.5). Requires an authenticated gh CLI.
 #
-# Usage: scripts/ci/observe-github.sh runs|schedule|renovate
+# Usage: scripts/ci/observe-github.sh runs|schedule|renovate|e2e
 #   runs      latest ci.yml runs for a pull request to main and for a push to
 #             main succeeded, took at most OBSERVE_MAX_MINUTES (default 15),
 #             and the push run used the Go version of go.mod (R1, NFR1)
 #   schedule  a scheduled ci.yml run succeeded in the last 8 days (R3.AC4)
 #   renovate  Renovate opened at least one pull request and the ci.yml run on
 #             its latest branch succeeded (R7, observed)
+#   e2e       in the latest successful ci.yml run for a pull request, the jobs
+#             test, hermetic and coverage report the e2e summary (S-15 R5.AC3)
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -87,8 +89,34 @@ EOF
 	[ "$conclusion" = "success" ] || fail "ci.yml run $id on the Renovate branch $branch concluded with $conclusion"
 	echo "observe renovate: ok (branch $branch, run $id)"
 	;;
+e2e)
+	run=$(latest_run pull_request) || fail "gh run list failed"
+	[ -n "$run" ] || fail "no completed ci.yml run for a pull request"
+	read -r id conclusion _ <<EOF
+$run
+EOF
+	[ "$conclusion" = "success" ] || fail "ci.yml run $id concluded with $conclusion"
+	# Match on the captured log, line by line: "<job>\t<step>\t<text>".
+	run_log=$(gh run view "$id" --log 2>/dev/null) || fail "cannot download the log of run $id"
+	tab=$(printf '\t')
+	for job in test hermetic coverage; do
+		found=no
+		while IFS= read -r line; do
+			case "$line" in
+			"$job$tab"*"e2e summary:"*)
+				found=yes
+				break
+				;;
+			esac
+		done <<EOF
+$run_log
+EOF
+		[ "$found" = yes ] || fail "the $job job of run $id does not report the e2e summary"
+	done
+	echo "observe e2e: ok (run $id)"
+	;;
 *)
-	echo "usage: $0 runs|schedule|renovate" >&2
+	echo "usage: $0 runs|schedule|renovate|e2e" >&2
 	exit 2
 	;;
 esac

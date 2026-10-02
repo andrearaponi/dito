@@ -25,3 +25,23 @@ Review this file before non-trivial work when the current request matches past m
 - Lesson: Walden's code identity treats a file that is still in HEAD as tracked even if it was removed from the index and is now ignored: verifying before committing a removal records an identity that the commit invalidates (reproduced: staged-only removal gives the pre-removal identity, the committed removal a new one).
 - Guardrail: Commit a removal of tracked files (or any change of what git tracks) before the final walden verify; then verify on the committed state and commit only the evidence.
 
+### 2026-09-30T20:39:23Z | e2e-harness | execute
+- Trigger: TestPlugins_TamperedPluginRejected asserted that the startup is refused, but the S-02 selftest cited as its evidence only proved that the tampered plugin is not loaded; the proxy starts anyway (F-15, a security finding excluded by C6).
+- Lesson: A 'verified' fact in a plan is only as strong as the observation behind it: 'rejected' meant 'not loaded' in the evidence, not 'startup refused'; reading it more strongly produced a wrong scenario that would also have published an open security finding.
+- Guardrail: Before encoding a verified fact in a scenario, re-read what the cited evidence actually observed and assert exactly that; if the stronger contract belongs to an open security finding, leave it to the spec that fixes it.
+
+### 2026-09-30T20:51:01Z | e2e-harness | execute
+- Trigger: TestLimits_P04_OverLimitAfterStart reproduced F-01 in every area run but passed once in a full run: the broken behavior depends on a race inside the proxy (ReverseProxy's immediate header flush vs the first Write), so the strict known-bug rule failed the suite.
+- Lesson: A known-bug scenario on racy code can pass by chance, and with strict expected failures that makes the suite flaky; each marked scenario must reproduce its bug in every timing branch.
+- Guardrail: For each marked scenario, check that the bug shows in every branch of the broken code; if it depends on timing, repeat the exchange (bounded, e.g. 20 times) and fail on the first bad response; run the whole suite several times before closing the catalog.
+
+### 2026-09-30T21:18:44Z | e2e-harness | execute
+- Trigger: Checkpoint 4.1 failed in make ci-selftest: S-02's coverage-package-removed deletes cmd/plugin-signer and expects make coverage to pass, but make coverage now also runs the e2e suite, which builds cmd/plugin-signer.
+- Lesson: When a CI target gains a step, the existing mutation cases of that target can lose their isolation: their assumptions about what a mutation leaves intact may no longer hold.
+- Guardrail: When extending a make target used by make ci-selftest, run all its cases (not only the new ones) and give cases that test one step a variable to skip the unrelated steps (here COVERAGE_E2E=no).
+
+### 2026-10-01T08:03:31Z | e2e-harness | execute
+- Trigger: walden verify of S-15 failed at task 3.2 (a full make e2e failed, output discarded by the proof's warm-up run); under load, unrelated scenarios failed with 'connect: can't assign requested address': R-09's request loop closed unread bodies, opening a connection per request and leaving about 5000 sockets in TIME_WAIT per run.
+- Lesson: Traffic loops in tests must reuse connections (read every body, pooled transport): connection churn exhausts the ephemeral ports (about 16k on macOS, TIME_WAIT about 30 s) across consecutive runs and fails unrelated scenarios. Throttling instead of reusing made the racy known bug miss its race.
+- Guardrail: In load or race scenarios, drain response bodies and share a transport with enough idle connections; count TIME_WAIT sockets before and after the scenario; stress the suite with parallel repeated runs before relying on it. Proofs must not discard the output of a step that can fail.
+

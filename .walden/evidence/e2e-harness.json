@@ -1,0 +1,1494 @@
+{
+  "schema_version": "v1alpha2",
+  "feature": "e2e-harness",
+  "tasks": {
+    "1.1": {
+      "task_fingerprint": "sha256:5fdd0d0222e66dd6e6ac796a401114948ba5069741e7fbfe2a40b2d27455cd27",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "env",
+            "GOTOOLCHAIN=auto",
+            "go",
+            "test",
+            "-count=1",
+            "-v",
+            "-run",
+            "^TestNewHandler$",
+            "./handlers/"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:d50864a6f0549c8444d7435bf51f4c0ef39f212d28133997c243e56bb4e02662"
+        },
+        {
+          "command": [
+            "make",
+            "build-check"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:97fd22648498a431feb190d629ea0385b699cd01d6748ce91e1aa42bb95aeae1"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "1.2": {
+      "task_fingerprint": "sha256:fa4e9860a2553ef0573291e61a530bebcc1dd038e58ef911ad2c8beb344de1e6",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "hello",
+            "--",
+            "echo",
+            "hello"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        },
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "absent-text",
+            "--",
+            "echo",
+            "hello"
+          ],
+          "expected_exit": 1,
+          "actual_exit": 1,
+          "output_digest": "sha256:aaaec43fc36adecdb4ef52bcb0bc9f01b05c44830860020496b17f49ba61949f"
+        },
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "--- PASS: TestHarness_KnownBugReported",
+            "--contains",
+            "--- PASS: TestHarness_KnownBugFixedFails",
+            "--contains",
+            "--- PASS: TestHarness_KnownBugInfraErrorFails",
+            "--contains",
+            "--- PASS: TestHarness_SummaryByFinding",
+            "--contains",
+            "--- PASS: TestHarness_FailureDiagnostics",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestHarness_(KnownBug|Summary|Failure)"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "1.3": {
+      "task_fingerprint": "sha256:fa788661e6c57b8f988bea2f0c939986c13b0a6e615134bac3cb0a0de27096d3",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "--- PASS: TestHarness_Observe64MiBByHash",
+            "--contains",
+            "--- PASS: TestHarness_ObserveFraming",
+            "--contains",
+            "--- PASS: TestHarness_ObserveEarlyHints",
+            "--contains",
+            "--- PASS: TestHarness_ObserveStreamingTiming",
+            "--contains",
+            "--- PASS: TestHarness_ObserveAbort",
+            "--contains",
+            "--- PASS: TestHarness_BackendRecordsRequests",
+            "--contains",
+            "--- PASS: TestHarness_WebSocketEcho",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestHarness_(Observe|Backend|WebSocket)"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "1.4": {
+      "task_fingerprint": "sha256:1667258852be04d46bef2518eba5c9779caeee06f0ec9489210e7c6cd833dca0",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "--- PASS: TestHarness_InProcessProxy",
+            "--contains",
+            "--- PASS: TestHarness_ConfigTemplateUsesBackends",
+            "--contains",
+            "--- PASS: TestHarness_ProxyLogsCaptured",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestHarness_(InProcess|ConfigTemplate|ProxyLogs)"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "1.5": {
+      "task_fingerprint": "sha256:089a4264d83701c8797e47e43e2557bfbc2f9a6c92d61c38d2207eede9badf09",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "--- PASS: TestHarness_SameOutcomeInProcessAndBinary",
+            "--contains",
+            "--- PASS: TestHarness_BinaryBuiltInRun",
+            "--contains",
+            "--- PASS: TestHarness_ProxyNotReadyReportsLogs",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestHarness_(SameOutcome|BinaryBuilt|ProxyNotReady)"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        },
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "e2e summary:",
+            "--absent",
+            "--- FAIL",
+            "--",
+            "env",
+            "GOTOOLCHAIN=auto",
+            "go",
+            "test",
+            "-count=2",
+            "-v",
+            "-run",
+            "^TestHarness_",
+            "./e2e/"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.1": {
+      "task_fingerprint": "sha256:b893ab081dc64c9237344f65f17ac6833dee6397d615759eec2051099ba3107f",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestRouting_RegexMatch",
+            "--contains",
+            "=== RUN   TestRouting_NoLocation404",
+            "--contains",
+            "=== RUN   TestRouting_FirstLocationWins",
+            "--contains",
+            "=== RUN   TestRouting_ReplacePathTrue",
+            "--contains",
+            "=== RUN   TestRouting_R05_ReplacePathFalse",
+            "--contains",
+            "=== RUN   TestRouting_QueryPreserved",
+            "--contains",
+            "KNOWN BUG F-04",
+            "--contains",
+            "--- PASS: TestRouting_ReplacePathTrue",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestRouting_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.10": {
+      "task_fingerprint": "sha256:971edd97b83316b4024b64113d5a4dec089218416d5ed34fd04000c44d97bd75",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestReload_NewLocationServed",
+            "--contains",
+            "=== RUN   TestReload_R10_RevertDetected",
+            "--contains",
+            "=== RUN   TestReload_R09_ConcurrentRequestsRace",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestReload_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.11": {
+      "task_fingerprint": "sha256:70cdd885f63fec604abcaee1f2cb774eeb4a4b3e58d2027ace7e94e65b8f96ad",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestMetrics_EndpointExposed",
+            "--contains",
+            "=== RUN   TestMetrics_R08_CountersPerRequest",
+            "--contains",
+            "KNOWN BUG F-28",
+            "--contains",
+            "--- PASS: TestMetrics_EndpointExposed",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestMetrics_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.12": {
+      "task_fingerprint": "sha256:262866175201c384a9983938eff9fd21d5677a32cafc44c65b86cad91f7d8e88",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestLogging_CompactAccessLog",
+            "--contains",
+            "=== RUN   TestLogging_R11_Disabled",
+            "--contains",
+            "=== RUN   TestLogging_R12_Verbose",
+            "--contains",
+            "KNOWN BUG F-32",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestLogging_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.13": {
+      "task_fingerprint": "sha256:12d09b0d68a48d3bfff6cbc85ccf217168b98a2f9d0ee6ee7a226cf1eceae4f1",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestLifecycle_R13_StartWithoutPlugins",
+            "--contains",
+            "=== RUN   TestLifecycle_GracefulShutdown",
+            "--contains",
+            "=== RUN   TestLifecycle_R14_LargeResponseThroughBinary",
+            "--contains",
+            "KNOWN BUG F-35",
+            "--contains",
+            "KNOWN BUG F-01",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestLifecycle_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.14": {
+      "task_fingerprint": "sha256:59d58cd742951f3685b4016f3f4e838d214808f47c90367d440484daccf1f01f",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "_R01_",
+            "--contains",
+            "_R02_",
+            "--contains",
+            "_R03_",
+            "--contains",
+            "_R04_",
+            "--contains",
+            "_R05_",
+            "--contains",
+            "_R06_",
+            "--contains",
+            "_R08_",
+            "--contains",
+            "_R09_",
+            "--contains",
+            "_R10_",
+            "--contains",
+            "_R11_",
+            "--contains",
+            "_R12_",
+            "--contains",
+            "_R13_",
+            "--contains",
+            "_R14_",
+            "--contains",
+            "_P01_",
+            "--contains",
+            "_P02_",
+            "--contains",
+            "_P03_",
+            "--contains",
+            "_P04_",
+            "--contains",
+            "_P05_",
+            "--contains",
+            "_P06_",
+            "--contains",
+            "_P07_",
+            "--contains",
+            "_P09_",
+            "--contains",
+            "_P10_",
+            "--contains",
+            "_P11_",
+            "--contains",
+            "_P12_",
+            "--absent",
+            "_R07_",
+            "--",
+            "env",
+            "GOTOOLCHAIN=auto",
+            "go",
+            "test",
+            "-list",
+            ".*",
+            "./e2e/"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.2": {
+      "task_fingerprint": "sha256:373729825ca1091b4135b7dd7e7e595ae3a4d9cca40981c90df391ef0c0ecacd",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestHeaders_R06_XForwarded",
+            "--contains",
+            "=== RUN   TestHeaders_HostRewritten",
+            "--contains",
+            "=== RUN   TestHeaders_RequestIDGenerated",
+            "--contains",
+            "=== RUN   TestHeaders_RequestIDPropagated",
+            "--contains",
+            "=== RUN   TestHeaders_HopByHopRemoved",
+            "--contains",
+            "=== RUN   TestHeaders_AdditionalHeaders",
+            "--contains",
+            "=== RUN   TestHeaders_ExcludedHeaders",
+            "--contains",
+            "=== RUN   TestHeaders_ExcludedHeadersCaseInsensitive",
+            "--contains",
+            "=== RUN   TestHeaders_SecurityHeaders",
+            "--contains",
+            "KNOWN BUG F-05",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestHeaders_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.3": {
+      "task_fingerprint": "sha256:b30d234e140654cd860fdac9ed43b0099249add121ae64d3c72994d0db3b5793",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestRequestBody_JSONIntact",
+            "--contains",
+            "=== RUN   TestRequestBody_R02_FormPost",
+            "--contains",
+            "=== RUN   TestRequestBody_R03_MalformedQuery",
+            "--contains",
+            "=== RUN   TestRequestBody_LimitWithContentLength",
+            "--contains",
+            "=== RUN   TestRequestBody_R04_LimitChunked",
+            "--contains",
+            "=== RUN   TestRequestBody_LargeUnderLimit",
+            "--contains",
+            "KNOWN BUG F-02",
+            "--contains",
+            "KNOWN BUG F-03",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestRequestBody_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.4": {
+      "task_fingerprint": "sha256:ba81eb6d6763c1e2d679cd6f7c6c29e49f5f05053bf94e584edeefce6985af91",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestResponseBody_Empty",
+            "--contains",
+            "=== RUN   TestResponseBody_OneByte",
+            "--contains",
+            "=== RUN   TestResponseBody_StatusWithEmptyBody",
+            "--contains",
+            "=== RUN   TestResponseBody_R01_P01_LargeWithContentLength",
+            "--contains",
+            "=== RUN   TestResponseBody_P02_LargeChunked",
+            "--contains",
+            "=== RUN   TestResponseBody_P05_HeadOverLimit",
+            "--contains",
+            "=== RUN   TestResponseBody_NotModifiedOverLimit",
+            "--contains",
+            "=== RUN   TestResponseBody_P06_EarlyHintsForwarded",
+            "--contains",
+            "=== RUN   TestResponseBody_P06_FinalStatusAfterEarlyHints",
+            "--contains",
+            "=== RUN   TestResponseBody_P07_ServerSentEvents",
+            "--contains",
+            "=== RUN   TestResponseBody_P10_MemoryBounded",
+            "--contains",
+            "=== RUN   TestResponseBody_P11_BackendAbortsBody",
+            "--contains",
+            "KNOWN BUG F-01",
+            "--contains",
+            "KNOWN BUG F-55",
+            "--contains",
+            "KNOWN BUG F-56",
+            "--contains",
+            "--- PASS: TestResponseBody_P06_FinalStatusAfterEarlyHints",
+            "--contains",
+            "--- PASS: TestResponseBody_P11_BackendAbortsBody",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestResponseBody_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.5": {
+      "task_fingerprint": "sha256:6b8ed631a5c42111882b933fa9d005ee75448709463905afd80aab0ce40ed366",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestLimits_P03_DeclaredOverLimit",
+            "--contains",
+            "=== RUN   TestLimits_P04_OverLimitAfterStart",
+            "--contains",
+            "=== RUN   TestLimits_P09_ErrorJSONForAnyPath",
+            "--contains",
+            "=== RUN   TestLimits_P12_FirstChunkOverLimit",
+            "--contains",
+            "=== RUN   TestLimits_LocationLimitOverridesGlobal",
+            "--contains",
+            "=== RUN   TestLimits_GlobalLimitWithoutLocationLimit",
+            "--contains",
+            "=== RUN   TestLimits_WarningLogged",
+            "--contains",
+            "KNOWN BUG F-54",
+            "--contains",
+            "KNOWN BUG F-01",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestLimits_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.6": {
+      "task_fingerprint": "sha256:9953808aacec7dc0fe265da90fc2f226bba3a39749ee7f35f878a9e75d462c0b",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestErrors_BackendUnreachable",
+            "--contains",
+            "=== RUN   TestErrors_BackendTimeout",
+            "--contains",
+            "=== RUN   TestErrors_InvalidTarget",
+            "--contains",
+            "=== RUN   TestErrors_ClientCancels",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestErrors_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.7": {
+      "task_fingerprint": "sha256:a53834ef32d459374d870f7eeafba3a7454a9491be581e8f52a13db399cf7e54",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestPlugins_MiddlewareOrder",
+            "--contains",
+            "=== RUN   TestPlugins_CriticalMiddlewareMissing",
+            "--contains",
+            "=== RUN   TestPlugins_SignedPluginLoaded",
+            "--contains",
+            "=== RUN   TestPlugins_TamperedPluginRejected",
+            "--contains",
+            "--- PASS: TestPlugins_SignedPluginLoaded",
+            "--contains",
+            "--- PASS: TestPlugins_TamperedPluginRejected",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestPlugins_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.8": {
+      "task_fingerprint": "sha256:c4bbe0a287e29c7cfe6d8d2620a951989760117bb1b478a89f619e339f58d60b",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestWebSocket_Echo",
+            "--contains",
+            "--- PASS: TestWebSocket_Echo",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestWebSocket_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "2.9": {
+      "task_fingerprint": "sha256:bb6b66a4bbd3746b8563f8e164c6d1278af70276f272618d4c3467fe24f2e466",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestTransport_HTTPSBackendCustomCA",
+            "--contains",
+            "=== RUN   TestTransport_MutualTLS",
+            "--contains",
+            "=== RUN   TestTransport_LocationOverridesGlobal",
+            "--contains",
+            "e2e summary:",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestTransport_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "3.1": {
+      "task_fingerprint": "sha256:cca5917eb892fcac47d7387f3d500d2a036e8606fc95d57347cfffab60fb71b6",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "e2e summary:",
+            "--contains",
+            "test-race: ok",
+            "--",
+            "make",
+            "test-race"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        },
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "e2e summary:",
+            "--contains",
+            "test-hermetic: ok",
+            "--",
+            "make",
+            "test-hermetic"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        },
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "e2e summary:",
+            "--contains",
+            "coverage: ok",
+            "--",
+            "make",
+            "coverage"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "3.2": {
+      "task_fingerprint": "sha256:45f152f8af33bdfbfeaa6cc72b3476afa211de34ab050165a583670bda568e90",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "=== RUN   TestLimits_",
+            "--contains",
+            "e2e summary:",
+            "--absent",
+            "=== RUN   TestRouting_",
+            "--",
+            "make",
+            "e2e",
+            "SCENARIO=^TestLimits_"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        },
+        {
+          "command": [
+            "sh",
+            "-c",
+            "make e2e \u003e/dev/null 2\u003e\u00261 || exit 1; start=$(date +%s); out=$(make e2e 2\u003e\u00261) || { printf '%s\n' \"$out\"; exit 1; }; d=$(( $(date +%s) - start )); case \"$out\" in *'e2e summary:'*) ;; *) exit 1 ;; esac; echo \"e2e duration ${d}s\"; [ \"$d\" -le 120 ]"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:7c725e471dc3ef85eaf8d1963da65d85144666e18d2529289909c1487a27c3d1"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "3.3": {
+      "task_fingerprint": "sha256:3fc5cb78626a8cf26075db1e9324650e4e9389fca1d04eb985e4b1bd587ba618",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "make",
+            "ci-selftest",
+            "SELFTEST_CASES=e2e-regression e2e-new-scenario"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:759be34d38c91ab7bccddbcc2e5f8a00a56fc78edff253c6aaaf64005617aca2"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "3.4": {
+      "task_fingerprint": "sha256:6315d8f856a281ea713739d9db3bab72e3e92e03f61dac5e0a3fb21ac499a89f",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/observe-github.sh",
+            "bogus"
+          ],
+          "expected_exit": 2,
+          "actual_exit": 2,
+          "output_digest": "sha256:5d3de5006e4ef11b3807977f0063668cfb5b83e488b409acc2763de3f1754ffe"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "3.5": {
+      "task_fingerprint": "sha256:92a233c52db598df09cdea273dfb5bdd29bec2e4ae0bddc670e40a0e40598472",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "grep",
+            "-q",
+            "make e2e SCENARIO=",
+            "README.md"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "command": [
+            "grep",
+            "-q",
+            "KnownBug(",
+            "README.md"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "4.1": {
+      "task_fingerprint": "sha256:4bf23f38d3cc4540b09cb3e82053e3fb0c8dea2d8133c890a502cc66b0052f60",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "make",
+            "ci"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:2f73a41f8bff9f2b0a64e0900943acd491c480f00a360283cc102c74d0c7ee47"
+        },
+        {
+          "command": [
+            "make",
+            "ci-selftest"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:b2c64f425b09f771d553fad833c787ffd55719a1164f4af7fec0f521f0a7a0e9"
+        },
+        {
+          "command": [
+            "scripts/ci/expect-output.sh",
+            "--contains",
+            "e2e summary:",
+            "--absent",
+            "--- FAIL",
+            "--",
+            "env",
+            "GOTOOLCHAIN=auto",
+            "go",
+            "test",
+            "-count=10",
+            "-shuffle=on",
+            "-v",
+            "./e2e/"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9f1675b48acff91fdd2e8228a3cfc8739921ceba903f71878c3761c297c7245f"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-01T08:21:08Z"
+    },
+    "4.2": {
+      "task_fingerprint": "sha256:320f56e2ba3a820a307b492ac091dccf28d15f8eff170b0e1bce34cffdb92955",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "complete",
+        "policy": "completion-post-state/v1",
+        "assertion_result": "passed",
+        "integrity": "post-state",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
+      },
+      "requirements_fingerprint": "sha256:6bc77e96c03f87c057734ade221269021e4a058d3bd64653c999bd0cac033b9f",
+      "design_fingerprint": "sha256:b332b26e2edca7b60eb0e5a377a66aeb48c43a3ec64364b2a5a428592ea964bb",
+      "tasks_fingerprint": "sha256:cb399b038872193d74f80298b2f4403345210b9676c6bb97db919ffce4941c91",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+      "profile": {
+        "curl": "curl 8.7.1 (x86_64-apple-darwin26.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.69.0\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
+        "go": "go version go1.24.0 darwin/arm64",
+        "go-effective": "go version go1.27.1 darwin/arm64",
+        "go-toolchain-setting": "local",
+        "platform": "darwin/arm64",
+        "sandbox-exec": "/usr/bin/sandbox-exec",
+        "walden": "v0.11.0"
+      },
+      "steps": [
+        {
+          "command": [
+            "scripts/ci/observe-github.sh",
+            "e2e"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:c033ac18b42cc80c732e6386fb5937db4ffc6cfbd3ef3b7b6dc1fc3b9504136d"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-10-02T06:08:36Z"
+    }
+  }
+}

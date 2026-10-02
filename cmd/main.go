@@ -7,7 +7,6 @@ import (
 	"dito/handlers"
 	"dito/logging"
 	"dito/metrics"
-	cmid "dito/middlewares"
 	"dito/plugin"
 	"errors"
 	"flag"
@@ -115,17 +114,10 @@ func StartServer(dito *app.Dito) {
 		}
 	}
 
-	// Create a new HTTP request multiplexer (mux) to handle incoming requests.
-	mux := http.NewServeMux()
-
-	mux.Handle("/", cmid.LoggingMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handlers.DynamicProxyHandler(dito, w, r, plugins)
-	}), dito))
-
-	// Create a custom HTTP server with the specified address and handler.
+	// Create a custom HTTP server with the specified address and the shared handler chain.
 	server := &http.Server{
 		Addr:    ":" + dito.Config.Port,
-		Handler: mux,
+		Handler: handlers.NewHandler(dito, plugins),
 	}
 
 	// Channel to listen for OS interrupt signals (e.g., Ctrl+C).

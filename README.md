@@ -139,6 +139,7 @@ make run
 | | `ci-selftest` | Prove that every CI gate fails on the defect it must catch |
 | | `image` | Build the linux/amd64 container image without pushing it |
 | | `lint-all` | Show every golangci-lint issue, including the pre-existing ones |
+| | `e2e` | Run the end-to-end scenarios of the proxy (`SCENARIO=<regex>` selects some) |
 
 ### 🛠️ Manual Installation (Advanced)
 
@@ -437,11 +438,11 @@ Every pull request to `main`, every push to `main` and a weekly scheduled run (M
 | `build` | `make build-check` | The proxy, `plugin-signer` and the plugins compile |
 | `vet` | `make vet` | `go vet` on the main module and on the plugins |
 | `modules` | `make modules` | Tidy `go.mod`/`go.sum`, one Go version everywhere, same versions for modules linked into both the proxy and a plugin |
-| `test` | `make test-race` | Tests with the race detector, in random order |
-| `hermetic` | `make test-hermetic` | Tests with outbound network traffic restricted to loopback |
+| `test` | `make test-race` | Tests with the race detector, in random order, then the end-to-end scenarios |
+| `hermetic` | `make test-hermetic` | Tests and end-to-end scenarios with outbound network traffic restricted to loopback |
 | `lint` | `make lint` | golangci-lint, reporting only the issues introduced by the change |
 | `vuln` | `make vuln` | `govulncheck` on the main module and on the plugins |
-| `coverage` | `make coverage` | Coverage of every package against the floors in `scripts/ci/coverage-floors.txt` |
+| `coverage` | `make coverage` | Coverage of every package against the floors in `scripts/ci/coverage-floors.txt`, then the end-to-end scenarios |
 | `smoke` | `make smoke-plugins` | Builds, signs (throwaway keys) and loads the example plugin, then proxies a request through it |
 | `image` | `make image` | Container image build (`linux/amd64`, not pushed) |
 | `workflows` | `make workflows` | actionlint plus the project policies: actions pinned by SHA, read-only permissions, tool versions, Renovate configuration |
@@ -468,6 +469,58 @@ Enable branch protection on `main` (Settings → Branches) and mark these checks
 ### Dependency updates
 
 [Renovate](https://github.com/apps/renovate) keeps Go modules, GitHub Actions (pinned by commit SHA), Docker base images (pinned by digest) and the tools in `tools.mk` up to date. Install the Renovate GitHub App on the repository; its configuration is `renovate.json`: non-major updates are grouped in one weekly pull request, and `go mod tidy` also runs in the plugin module.
+
+## 🧪 End-to-end scenarios
+
+The `e2e/` package checks the proxy as a client sees it: every scenario starts real backends on loopback, a proxy with a real configuration, and observes status, headers, bodies (compared by hash), framing, streaming, WebSocket traffic and the proxy logs. The catalog covers every feature of this README; each scenario carries its reproduction ID (`R-xx`) or probe (`P-xx`) when it has one.
+
+```bash
+make e2e                           # the whole suite, with the race detector, in random order
+make e2e SCENARIO=^TestLimits_     # one area
+make e2e SCENARIO=_R05_            # one scenario, by its ID
+```
+
+The suite also runs inside `make test-race`, `make test-hermetic` and `make coverage`, so every pull request runs it. It ends with a summary such as `e2e summary: 48 passed, 0 failed, 27 known bugs (F-01: 6, ...)`.
+
+### Writing a scenario
+
+A scenario is a Go test in `e2e/`, in the file of its area, named `Test<Area>_<ID>_<Description>`:
+
+```go
+func TestRouting_ReplacePathTrue(t *testing.T) {
+	Run(t, func(s *S) {
+		api := s.Backend("api", text("ok"))
+		p := s.Proxy(`
+  - path: "^/old/path$"
+    target_url: "{{backend "api"}}/new/path"
+    replace_path: true`)
+		s.Get(p.URL + "/old/path")
+		assert.Equal(s, "/new/path", onlyRequest(s, api).Path)
+	})
+}
+```
+
+- **Proxy**: `s.Proxy(locations, opts...)` runs the handler chain of the binary in-process; `s.Binary(...)` runs the compiled proxy, for configuration files, hot reload (`WithHotReload`, `s.Reload`), signals and signed plugins (`WithSignedPlugin`). Options: `WithMetrics`, `WithLogging`, `WithConfig`, `WithTransport`, `WithPlugins`.
+- **Configuration**: `{{backend "name"}}`, `{{ws "name"}}`, `{{ca "name"}}`, `{{clientCert}}` and `{{clientKey}}` are replaced with the addresses and TLS files of the scenario.
+- **Backends**: `s.Backend(name, handler)` records every request (`Requests()`); `WithTLS` and `WithClientAuth` serve HTTPS and mutual TLS; `deterministicBody(n, framing)` serves bodies of any size with a known hash; `s.RawBackend` sends raw bytes.
+- **Client**: `s.Get`, `s.Head`, `s.Do`, `s.Stream` (line by line, with timing), `s.DialWebSocket`, `s.DoPartialUpload`; logs with `s.WaitLog` and `s.NoLog`.
+- **Assertions**: pass `s` to `testify` (`assert.Equal(s, ...)`, `require.NoError(s, ...)`). Use `s.Fatalf` only for harness errors (a backend that does not start, a timeout).
+
+### Known bugs
+
+A behavior still broken by an open finding stays in the catalog, marked with the finding:
+
+```go
+func TestRouting_R05_ReplacePathFalse(t *testing.T) {
+	KnownBug("F-04").Run(t, func(s *S) { /* assertions on the correct behavior */ })
+}
+```
+
+- While its assertions fail, the scenario is reported as skipped with `KNOWN BUG F-04` and the suite passes.
+- When they all pass, the scenario fails with `scenario passes: remove KnownBug("F-04")`: the change that fixes a finding also removes its markers.
+- Harness errors fail the scenario even when it is marked.
+- A marked scenario must reproduce its bug every time: if the broken code is racy, repeat the exchange (see `TestLimits_P04_OverLimitAfterStart`).
+- Scenarios that would demonstrate an open security finding are added together with its fix.
 
 ## Reporting Issues
 

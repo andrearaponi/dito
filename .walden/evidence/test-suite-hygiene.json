@@ -10,13 +10,13 @@
         "policy": "verify-purity/v1",
         "assertion_result": "passed",
         "integrity": "pure",
-        "before_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
-        "after_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240"
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
       },
       "requirements_fingerprint": "sha256:82c14fae0d2e8752f8b920123af75cdd536a4fdc83274aa1bbdff8e13ec6d7f6",
       "design_fingerprint": "sha256:b32171965b631dee0efc7dd2c80fe76868010b5fa06fa8838cfd4a2f0ab1cbf5",
       "tasks_fingerprint": "sha256:2538295c4e63b73c55bd28a6e6408c506819f5a94d11dd1d4ac2a2674f77fb93",
-      "code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
       "profile": {
         "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
         "go": "go version go1.24.0 darwin/arm64",
@@ -42,7 +42,7 @@
           ],
           "expected_exit": 0,
           "actual_exit": 0,
-          "output_digest": "sha256:5c4290210dd170fffea1304bf73a3c0f5739abefd2f203436291e587d517a0ed"
+          "output_digest": "sha256:f8ec231c0761ce34f630b249c8f31f42f248461eb248ccf219c60be0a27480a6"
         },
         {
           "command": [
@@ -59,11 +59,11 @@
           ],
           "expected_exit": 0,
           "actual_exit": 0,
-          "output_digest": "sha256:99f493729464982d1fd177aa706c23dfe1a47cced5fcc33b74fc31ae1cf05a93"
+          "output_digest": "sha256:52006db9ba6ae32684855056dda468ff3a18d62ae40746ed77fc784ad653bc07"
         }
       ],
       "result": "passed",
-      "verified_at": "2026-09-30T18:29:30Z"
+      "verified_at": "2026-10-01T08:40:46Z"
     },
     "2": {
       "task_fingerprint": "sha256:388d439908c1eb0a7aa2afb8189655c24a92fae30bd42f4f2d365976c27ae23b",
@@ -73,13 +73,13 @@
         "policy": "verify-purity/v1",
         "assertion_result": "passed",
         "integrity": "pure",
-        "before_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
-        "after_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240"
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
       },
       "requirements_fingerprint": "sha256:82c14fae0d2e8752f8b920123af75cdd536a4fdc83274aa1bbdff8e13ec6d7f6",
       "design_fingerprint": "sha256:b32171965b631dee0efc7dd2c80fe76868010b5fa06fa8838cfd4a2f0ab1cbf5",
       "tasks_fingerprint": "sha256:2538295c4e63b73c55bd28a6e6408c506819f5a94d11dd1d4ac2a2674f77fb93",
-      "code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
       "profile": {
         "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
         "go": "go version go1.24.0 darwin/arm64",
@@ -114,11 +114,11 @@
           ],
           "expected_exit": 0,
           "actual_exit": 0,
-          "output_digest": "sha256:2daa5ae97cda9922360a6a76ebdf1dff5130e13ddf1c19a71c042c3a027a3d11"
+          "output_digest": "sha256:863dc87e1db63b213a2f592beabb14e37b2434d720ca22bdf739a3d403151ad2"
         }
       ],
       "result": "passed",
-      "verified_at": "2026-09-30T18:29:30Z"
+      "verified_at": "2026-10-01T08:40:46Z"
     },
     "3": {
       "task_fingerprint": "sha256:d45feb8267503fa0f66d14b4e8968889afd09c6a12dd5d0fa7e9cc598f4e295c",
@@ -128,13 +128,13 @@
         "policy": "verify-purity/v1",
         "assertion_result": "passed",
         "integrity": "pure",
-        "before_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
-        "after_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240"
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
       },
       "requirements_fingerprint": "sha256:82c14fae0d2e8752f8b920123af75cdd536a4fdc83274aa1bbdff8e13ec6d7f6",
       "design_fingerprint": "sha256:b32171965b631dee0efc7dd2c80fe76868010b5fa06fa8838cfd4a2f0ab1cbf5",
       "tasks_fingerprint": "sha256:2538295c4e63b73c55bd28a6e6408c506819f5a94d11dd1d4ac2a2674f77fb93",
-      "code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
       "profile": {
         "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
         "go": "go version go1.24.0 darwin/arm64",
@@ -160,11 +160,11 @@
           ],
           "expected_exit": 0,
           "actual_exit": 0,
-          "output_digest": "sha256:3143a5a32b09ed49af440cb376cae61cb85fd1a7ade53aa43ee9d17e4d11aaab"
+          "output_digest": "sha256:826fc9257990f2e52646ba3ca7bf97750ba18ffbbe2267332801bb35133fa900"
         }
       ],
       "result": "passed",
-      "verified_at": "2026-09-30T18:29:30Z"
+      "verified_at": "2026-10-01T08:40:46Z"
     },
     "4": {
       "task_fingerprint": "sha256:2e357d696093838621f4a8c35aaee9247df0a36acd491bcd3fdc6a7b9e7e4d7b",
@@ -174,13 +174,13 @@
         "policy": "verify-purity/v1",
         "assertion_result": "passed",
         "integrity": "pure",
-        "before_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
-        "after_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240"
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
       },
       "requirements_fingerprint": "sha256:82c14fae0d2e8752f8b920123af75cdd536a4fdc83274aa1bbdff8e13ec6d7f6",
       "design_fingerprint": "sha256:b32171965b631dee0efc7dd2c80fe76868010b5fa06fa8838cfd4a2f0ab1cbf5",
       "tasks_fingerprint": "sha256:2538295c4e63b73c55bd28a6e6408c506819f5a94d11dd1d4ac2a2674f77fb93",
-      "code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
       "profile": {
         "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
         "go": "go version go1.24.0 darwin/arm64",
@@ -204,7 +204,7 @@
           ],
           "expected_exit": 0,
           "actual_exit": 0,
-          "output_digest": "sha256:ef071c6ddce095e46d60c44e05008a1c1b3dc0e1fb876d7b3a2d30c93f765257"
+          "output_digest": "sha256:eb8876b198477c1ff24ea517fb707c754dc98fb3cbc5ef39f860e51c9183e2b5"
         },
         {
           "command": [
@@ -223,11 +223,11 @@
           ],
           "expected_exit": 0,
           "actual_exit": 0,
-          "output_digest": "sha256:1d3b018702cbd71e1242ca45034c8f671f5301527d99649dc808524301f1f49f"
+          "output_digest": "sha256:001f87e294b087d8017e57752bf891a0b524035445316641705043154b66f2cf"
         }
       ],
       "result": "passed",
-      "verified_at": "2026-09-30T18:29:30Z"
+      "verified_at": "2026-10-01T08:40:46Z"
     },
     "5": {
       "task_fingerprint": "sha256:f167ee0e5d5f05e3007191fe2c92af42e826443d1b66b825d7ec8f6c5d560c4d",
@@ -237,13 +237,13 @@
         "policy": "verify-purity/v1",
         "assertion_result": "passed",
         "integrity": "pure",
-        "before_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
-        "after_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240"
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
       },
       "requirements_fingerprint": "sha256:82c14fae0d2e8752f8b920123af75cdd536a4fdc83274aa1bbdff8e13ec6d7f6",
       "design_fingerprint": "sha256:b32171965b631dee0efc7dd2c80fe76868010b5fa06fa8838cfd4a2f0ab1cbf5",
       "tasks_fingerprint": "sha256:2538295c4e63b73c55bd28a6e6408c506819f5a94d11dd1d4ac2a2674f77fb93",
-      "code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
       "profile": {
         "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
         "go": "go version go1.24.0 darwin/arm64",
@@ -267,7 +267,7 @@
           ],
           "expected_exit": 0,
           "actual_exit": 0,
-          "output_digest": "sha256:2c737fa64797753eea93274b0ad9aa4b847a9cb3d1ea26e807e4bad085a406af"
+          "output_digest": "sha256:247a22dff9c70fa9b3ed69d1eefa41542ecb8b13457587bb0ade5949f62e2c8d"
         },
         {
           "command": [
@@ -296,7 +296,7 @@
         }
       ],
       "result": "passed",
-      "verified_at": "2026-09-30T18:29:30Z"
+      "verified_at": "2026-10-01T08:40:46Z"
     },
     "6": {
       "task_fingerprint": "sha256:e0ea60f07ce266caeac8602c409e32701ac7e7d32c1743c89dd870699d287395",
@@ -306,13 +306,13 @@
         "policy": "verify-purity/v1",
         "assertion_result": "passed",
         "integrity": "pure",
-        "before_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
-        "after_code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240"
+        "before_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
+        "after_code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914"
       },
       "requirements_fingerprint": "sha256:82c14fae0d2e8752f8b920123af75cdd536a4fdc83274aa1bbdff8e13ec6d7f6",
       "design_fingerprint": "sha256:b32171965b631dee0efc7dd2c80fe76868010b5fa06fa8838cfd4a2f0ab1cbf5",
       "tasks_fingerprint": "sha256:2538295c4e63b73c55bd28a6e6408c506819f5a94d11dd1d4ac2a2674f77fb93",
-      "code_identity": "sha256:bdf5ec08ff79f1c8cbbedc18efb66930234e3bf1c35ced76df703cfb68ba4240",
+      "code_identity": "sha256:237d574571826a3f12823c88f729a525fe07c67bb069f328b291d91634f64914",
       "profile": {
         "curl": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1\nRelease-Date: 2024-03-27\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NTLM SPNEGO SSL threadsafe UnixSockets",
         "go": "go version go1.24.0 darwin/arm64",
@@ -336,7 +336,7 @@
           ],
           "expected_exit": 0,
           "actual_exit": 0,
-          "output_digest": "sha256:31dfd15a29ba8b16a2f106bb71b9257fe3d023014cf87ac45ef1171188f7d40f"
+          "output_digest": "sha256:77a4affd54db186886dd9251bec084531cf5307b3dbe7647184db48b6f29e5b1"
         },
         {
           "command": [
@@ -353,7 +353,7 @@
           ],
           "expected_exit": 0,
           "actual_exit": 0,
-          "output_digest": "sha256:ac63a5d59e7dc28feaf51fbaa353dbd5eb934e220c900416e90620d291ad10f0"
+          "output_digest": "sha256:16ab68cf22382efc3c4ef14fb766786cbd36fc605c7f4f9a114594ba29ba3ecb"
         },
         {
           "command": [
@@ -370,11 +370,11 @@
           ],
           "expected_exit": 7,
           "actual_exit": 7,
-          "output_digest": "sha256:b15c39248514b093aaac1f450a7029b4079d015b5dd56e194e0b8842023ec99a"
+          "output_digest": "sha256:b840d0f8e53ebf1ec7b88f455fda19c7b5fcb8b33fc821f5dea1bb558d8c5060"
         }
       ],
       "result": "passed",
-      "verified_at": "2026-09-30T18:29:30Z"
+      "verified_at": "2026-10-01T08:40:46Z"
     }
   }
 }

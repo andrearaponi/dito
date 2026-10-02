@@ -1,9 +1,9 @@
 ---
 walden_schema_version: v1alpha1
 status: approved
-approved_at: 2026-09-30T18:07:22Z
-last_modified: 2026-09-30T18:07:22Z
-approved_fingerprint: sha256:8f3d9187cf7e574ad2d4d4fb5df7074c7694a160eae1e75e4b40247ef6c543b9
+approved_at: 2026-10-01T07:07:24Z
+last_modified: 2026-10-01T07:07:24Z
+approved_fingerprint: sha256:cd6c7eb24dad1edd2e24a18382ba91d7949ffb051e62075b74d1f0e55873e666
 source_design_approved_at: 2026-09-30T07:00:40Z
 source_design_fingerprint: sha256:3d9aa995ab487513125606401422d095b83b782bd3c3abd58399dbba5acc78aa
 ---
@@ -278,6 +278,8 @@ Note comuni a tutti i task:
       - command: ["grep", "-q", "make ci", ".github/pull_request_template.md"]
   - [x] 7.2 Checkpoint locale completo
     - Nessuna modifica: `make ci`, `make image` e l'intero harness di mutazione (24 casi).
+
+      Revisione del 30/09/2026: S-15 ha aggiunto due casi all'harness. La proof non fissa più il numero totale dei casi e richiede `ok, 0 failed`; resta rigorosa perché `make ci-selftest` esce con errore se un solo caso fallisce.
     - Requirements: `R2.AC1`, `R2.AC2`, `R2.AC3`, `R2.AC4`, `R2.AC5`, `R2.AC6`, `R3.AC1`, `R3.AC2`, `R3.AC3`, `R4.AC1`, `R4.AC2`, `R4.AC3`, `R5.AC1`, `R5.AC2`, `R5.AC3`, `R6.AC1`, `R6.AC2`, `R6.AC3`
     - Design: Verification Plan
     - Verification:
@@ -290,7 +292,7 @@ Note comuni a tutti i task:
         covers: ["R2.AC6"]
         timeout: 45m
       - command: ["make", "ci-selftest"]
-        expect_output: "selftest summary: 24 ok, 0 failed"
+        expect_output: "ok, 0 failed"
         covers: ["R2.AC1", "R2.AC2", "R2.AC3", "R2.AC4", "R2.AC5", "R2.AC6", "R3.AC1", "R3.AC2", "R3.AC3", "R4.AC1", "R4.AC2", "R5.AC2", "R5.AC3", "R6.AC3"]
         timeout: 90m
   - [x] 7.3 Esecuzioni su GitHub dopo il push

@@ -28,7 +28,11 @@ floor_of() {
 	awk -v pkg="$1" '$1 == pkg { print $2; exit }' "$2"
 }
 
-if ! go test -count=1 -cover -coverprofile="$tmp/cover.out" ./... >"$tmp/test.out" 2>&1; then
+# The e2e suite (package dito/e2e, test files only) runs separately: it has
+# no statements of its own to measure.
+pkgs=$(go list ./... | grep -v '/e2e$')
+# shellcheck disable=SC2086 # one argument per package
+if ! go test -count=1 -cover -coverprofile="$tmp/cover.out" $pkgs >"$tmp/test.out" 2>&1; then
 	cat "$tmp/test.out" >&2
 	echo "coverage: FAIL (tests failed)" >&2
 	exit 1
