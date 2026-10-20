@@ -303,33 +303,30 @@ func WatchConfig(configFile string, onChange func(*ProxyConfig), logger *slog.Lo
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			fileInfo, err := os.Stat(configFile)
+	for range ticker.C {
+		fileInfo, err := os.Stat(configFile)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error statting configuration file: %v", err))
+			continue
+		}
+
+		if fileInfo.ModTime().After(lastModified) {
+			// Wait a bit to ensure file write is complete
+			time.Sleep(1 * time.Second)
+
+			newConfig, err := LoadConfiguration(configFile)
 			if err != nil {
-				logger.Error(fmt.Sprintf("Error statting configuration file: %v", err))
+				logger.Error(fmt.Sprintf("Error loading configuration: %v", err))
 				continue
 			}
 
-			if fileInfo.ModTime().After(lastModified) {
-				// Wait a bit to ensure file write is complete
-				time.Sleep(1 * time.Second)
-
-				newConfig, err := LoadConfiguration(configFile)
-				if err != nil {
-					logger.Error(fmt.Sprintf("Error loading configuration: %v", err))
-					continue
-				}
-
-				if isFirstCheck {
-					isFirstCheck = false
-				} else if IsConfigDifferent(GetCurrentProxyConfig(), newConfig) {
-					onChange(newConfig)
-					logger.Info("Configuration reloaded successfully")
-				}
-				lastModified = fileInfo.ModTime()
+			if isFirstCheck {
+				isFirstCheck = false
+			} else if IsConfigDifferent(GetCurrentProxyConfig(), newConfig) {
+				onChange(newConfig)
+				logger.Info("Configuration reloaded successfully")
 			}
+			lastModified = fileInfo.ModTime()
 		}
 	}
 }
